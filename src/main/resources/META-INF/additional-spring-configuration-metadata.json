@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "config.business.prefix",
+      "type": "java.lang.String",
+      "description": "Description for config.business.prefix."
+    }
+  ]
+}

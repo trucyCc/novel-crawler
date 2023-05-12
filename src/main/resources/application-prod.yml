@@ -1,0 +1,41 @@
+server:
+  port: 8989
+
+spring:
+  datasource:
+    type: com.zaxxer.hikari.HikariDataSource
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    # todo: 初始化-需要重新填写数据库信息
+    username:
+    password:
+    url: jdbc:mysql://localhost:3306/?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Hongkong
+    hikari:
+      minimum-idle: 5
+      idle-timeout: 30000
+      maximum-pool-size: 10
+      auto-commit: true
+      pool-name: HikariCP
+      max-lifetime: 30000
+      connection-timeout: 30000
+      connection-test-query: select 1
+  jpa:
+    database-platform: org.hibernate.dialect.MySQL5InnoDBDialect
+    hibernate:
+      ddl-auto: update
+      naming:
+        strategy: org.hibernate.cfg.ImprovedNamingStrategy
+    show-sql: false
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    default-property-inclusion: non_null
+
+
+config:
+  business:
+    prefix: xx
+
+
+springdoc:
+  default-flat-param-object: false
+  api-docs:
+    enabled: false # 是否开启接口文档
