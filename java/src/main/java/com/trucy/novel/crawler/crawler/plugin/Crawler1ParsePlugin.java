@@ -13,12 +13,14 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
+import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
+@Component
 public class Crawler1ParsePlugin extends CrawlerParse {
     private static String pluginName = "ibiquCrawlerPlugin";
     public static String url = "http://www.ibiqu.org/";
