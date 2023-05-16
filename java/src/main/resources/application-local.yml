@@ -1,0 +1,24 @@
+server:
+  port: 8989
+
+spring:
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    default-property-inclusion: non_null
+  data:
+    mongodb:
+      host: 127.0.0.1
+      port: 4523
+      database: novel_crawler
+
+springdoc:
+  default-flat-param-object: true
+  api-docs:
+    enabled: true # 是否开启接口文档
+#  swagger-ui:
+#    # 持久化认证数据，如果设置为 true，它会保留授权数据并且不会在浏览器关闭/刷新时丢失
+#    persistAuthorization: true
+
+# http://127.0.0.1:8989/swagger-ui/index.html
+# http://127.0.0.1:8989/doc.html
+# https://juejin.cn/post/7214015651828006967#heading-7
