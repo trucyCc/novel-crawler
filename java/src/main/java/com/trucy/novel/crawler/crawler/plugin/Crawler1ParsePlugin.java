@@ -294,6 +294,7 @@ public class Crawler1ParsePlugin extends CrawlerParse {
     @Override
     public CrawlerChapterDto crawlerChapter(String url) {
         val chapterDto = new CrawlerChapterDto();
+        chapterDto.setUrl(url);
 
         val client = getConnectClient();
         val request = getRequest(url);
