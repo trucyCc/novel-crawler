@@ -1,24 +1,11 @@
 import ReactDOM from 'react-dom/client';
-import { Snackbar, Alert } from '@mui/material';
 
 const API_BASE_URL = 'http://127.0.0.1:8989/';
-
-const errorTopic = (str, status, time = 2000) => {
-    const alertContainer = ReactDOM.createRoot(document.createElement('div'));
-    alertContainer.render(
-        <Snackbar open={status} autoHideDuration={3000} >
-            <Alert severity="success" sx={{ width: '100%' }}>
-                {str}
-            </Alert>
-        </Snackbar>
-    );
-}
 
 export const RequestParamType = {
     JSON: 'application/json',
     XFORM: 'application/x-www-form-urlencoded'
 }
-
 
 export const RequestMethodType = {
     GET: 'GET',
@@ -27,8 +14,6 @@ export const RequestMethodType = {
 
 
 export const fetchData = async (url, paramType, body, methodType) => {
-
-
     const response = await fetch(API_BASE_URL + url, {
         method: methodType,
         headers: {
@@ -46,7 +31,7 @@ export const fetchData = async (url, paramType, body, methodType) => {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
 
-         json = await response.json();
+        json = await response.json();
         if (json.code === undefined || json.code !== 200) {
             throw new Error(json.message);
         }
@@ -55,7 +40,7 @@ export const fetchData = async (url, paramType, body, methodType) => {
         console.log(error)
     }
 
-    return {response, json}
+    return { response, json }
 
 };
 
@@ -67,6 +52,6 @@ export const postJson = async (url, body) => {
     return fetchData(url, RequestParamType.JSON, body, RequestMethodType.POST);
 }
 
-export const getXForm = async(url) => {
+export const getXForm = async (url) => {
     return fetchData(url, RequestParamType.XFORM, undefined, RequestMethodType.GET);
 }
