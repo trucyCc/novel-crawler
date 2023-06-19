@@ -1,12 +1,11 @@
 "use client";
-import { Search } from "lucide-react";
-
+import { Search, Loader2 } from "lucide-react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
 import * as z from "zod";
 import { Input } from "@/components/ui/input";
-
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -24,9 +23,9 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-
 import { toast } from "@/components/ui/use-toast";
 
+// form schema 验证
 const FormSchema = z.object({
   searchText: z
     .string({
@@ -37,21 +36,81 @@ const FormSchema = z.object({
     }),
 });
 
-const HomeSearch = () => {
+// home search
+const HomeSearch = ({ searchHttp }) => {
+  // 获取form
   const form = useForm({
     resolver: zodResolver(FormSchema),
   });
 
-  function onSubmit(data) {
+  // search button lodaing状态
+  const [searchButtonLoading, setSearchButtonLoading] = useState(false);
+  const setSearchButtonToLoading = () => {
+    setSearchButtonLoading(true);
+  };
+  const setSearchButtonLoadinEnd = () => {
+    setSearchButtonLoading(false);
+  };
+
+  // 提交表单，搜索指定内容
+  const onSubmit = async (data) => {
+    setSearchButtonToLoading();
+
+    // 提示搜索内容
+    onSubmitMessageToast(data);
+
+    // 获取搜索结果
+    const resultData = await getSearchData(data.searchText);
+    console.log(resultData);
+
+    // 解除查询按钮加载状态
+    setSearchButtonLoadinEnd();
+  };
+
+  // 获取检索结果 API
+  const getSearchData = async (text) => {
+    const params = new URLSearchParams();
+    params.append("name", text);
+
+    const queryString = params.toString();
+    const url = `${searchHttp}/crawler/query?${queryString}`;
+
+    return await fetch(url)
+      .then((response) => response.json())
+      .then((data) => {
+        return data;
+      })
+      .catch((error) => {
+        setSearchButtonLoadinEnd();
+        console.error("Error fetching data:", error);
+        errorMessageToast(error);
+      });
+  };
+
+  // toast 搜索内容
+  const onSubmitMessageToast = (data) => {
     toast({
-      title: "You submitted the following values:",
+      title: "你提交的检索值:",
       description: (
         <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
           <code className="text-white">{JSON.stringify(data, null, 2)}</code>
         </pre>
       ),
     });
-  }
+  };
+
+  // error message toast
+  const errorMessageToast = (error) => {
+    toast({
+      variant: "destructive",
+      title: "异常:",
+      description: (
+        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
+          <code className="text-white">{error}</code>
+        </pre>
+      ),
+    });
+  };
 
   return (
     <Form {...form} className="flex flex-shrink-0">
@@ -59,6 +118,7 @@ const HomeSearch = () => {
         onSubmit={form.handleSubmit(onSubmit)}
         className="flex items-center pb-10 w-10/12"
       >
+        {/* 目标源设置 */}
         <FormField
           control={form.control}
           name="source"
@@ -80,6 +140,8 @@ const HomeSearch = () => {
             </FormItem>
           )}
         />
+
+        {/* 搜索内容 */}
         <FormField
           control={form.control}
           name="searchText"
@@ -94,8 +156,17 @@ const HomeSearch = () => {
           )}
         />
 
-        <Button type="submit" className="sm:w-3/12 w-2/12	">
-          <Search className="sm:mr-2 sm:h-4 sm:w-4" />
+        {/* 提交按钮 */}
+        <Button
+          disabled={searchButtonLoading}
+          type="submit"
+          className="sm:w-3/12 w-2/12	"
+        >
+          {searchButtonLoading ? (
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+          ) : (
+            <Search className="sm:mr-2 sm:h-4 sm:w-4" />
+          )}
           <div className="hidden sm:flex">查询</div>
         </Button>
       </form>

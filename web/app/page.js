@@ -6,7 +6,9 @@ const Home = () => {
   return (
     <div className="w-full h-full items-center flex justify-center  flex-col">
       <HomeLogo />
-      <HomeSearch />
+      <HomeSearch 
+        searchHttp={process.env.SERVER_HTTP}
+      />
       {/* <HomeNovelShelf /> */}
     </div>
   )
