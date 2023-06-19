@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 @Component
 public class Crawler1ParsePlugin implements CrawlerParse {
-    private static String pluginName = "ibiquCrawlerPlugin";
+    private static final String pluginName = "ibiquCrawlerPlugin";
     public static String url = "http://www.ibiqu.org/";
     public static String queryUrl = "http://www.ibiqu.org/modules/article/search.php?searchkey={}";
 
