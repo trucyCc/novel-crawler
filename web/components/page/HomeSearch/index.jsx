@@ -1,6 +1,6 @@
 "use client";
 import { Search, Loader2 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, Controller } from "react-hook-form";
@@ -24,6 +24,10 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { toast } from "@/components/ui/use-toast";
+import { debounce } from "lodash";
+import { useSelector, useDispatch } from "react-redux";
+import { setStoreSearchData } from "@/stores/SearchSlice";
+
 
 // form schema 验证
 const FormSchema = z.object({
@@ -43,6 +47,10 @@ const HomeSearch = ({ searchHttp }) => {
     resolver: zodResolver(FormSchema),
   });
 
+  // store
+  const searchDataStore = useSelector((state) => state.searchData);
+  const dispatch = useDispatch();
+
   // search button lodaing状态
   const [searchButtonLoading, setSearchButtonLoading] = useState(false);
   const setSearchButtonToLoading = () => {
@@ -53,7 +61,7 @@ const HomeSearch = ({ searchHttp }) => {
   };
 
   // 提交表单，搜索指定内容
-  const onSubmit = async (data) => {
+  const onSubmit = debounce(async (data) => {
     setSearchButtonToLoading();
 
     // 提示搜索内容
@@ -63,9 +71,17 @@ const HomeSearch = ({ searchHttp }) => {
     const resultData = await getSearchData(data.searchText);
     console.log(resultData);
 
+    // 放入redux
+    if (resultData.code === 200) {
+      dispatch(setStoreSearchData(resultData.data));
+      console.log(searchDataStore);
+    } else {
+      errorMessageToast({ message: resultData.message });
+    }
+
     // 解除查询按钮加载状态
     setSearchButtonLoadinEnd();
-  };
+  }, 300);
 
   // 获取检索结果 API
   const getSearchData = async (text) => {
@@ -103,10 +119,10 @@ const HomeSearch = ({ searchHttp }) => {
   const errorMessageToast = (error) => {
     toast({
       variant: "destructive",
-      title: "异常:",
+      title: "异常",
       description: (
         <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{error}</code>
+          <code className="text-white">{JSON.stringify(error, null, 2)}</code>
         </pre>
       ),
     });
@@ -116,7 +132,7 @@ const HomeSearch = ({ searchHttp }) => {
     <Form {...form} className="flex flex-shrink-0">
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="flex items-center pb-10 w-10/12"
+        className="flex items-center py-9 w-10/12 "
       >
         {/* 目标源设置 */}
         <FormField

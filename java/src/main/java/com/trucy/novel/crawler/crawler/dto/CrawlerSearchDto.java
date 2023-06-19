@@ -13,7 +13,7 @@ public class CrawlerSearchDto {
     private String name;
     private String author;
     private String url;
-    private BookSerialStatus status;
+    private String status;
     private String lastChapterName;
     private String lastChapterUrl;
     private String lastUpdateTime;

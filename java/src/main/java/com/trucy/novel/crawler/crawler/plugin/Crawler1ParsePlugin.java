@@ -23,7 +23,7 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class Crawler1ParsePlugin implements CrawlerParse {
     private static final String pluginName = "ibiquCrawlerPlugin";
-    public static String url = "http://www.ibiqu.org/";
+    public static String url = "http://www.ibiqu.org";
     public static String queryUrl = "http://www.ibiqu.org/modules/article/search.php?searchkey={}";
 
     public static void main(String[] args) {
@@ -89,7 +89,7 @@ public class Crawler1ParsePlugin implements CrawlerParse {
                     // 书名，书籍url
                     if (i == 0) {
                         crawlerSearchDto.setName(element.getElementsByTag("a").get(0).text());
-                        crawlerSearchDto.setUrl(element.getElementsByTag("a").get(0).attr("href"));
+                        crawlerSearchDto.setUrl(url + element.getElementsByTag("a").get(0).attr("href"));
                         continue;
                     }
 
@@ -118,7 +118,7 @@ public class Crawler1ParsePlugin implements CrawlerParse {
                     // 最新章节名，最新章节url
                     if (i == 0) {
                         crawlerSearchDto.setLastChapterName(element.getElementsByTag("a").get(0).text());
-                        crawlerSearchDto.setLastChapterUrl(element.getElementsByTag("a").get(0).attr("href"));
+                        crawlerSearchDto.setLastChapterUrl(url + element.getElementsByTag("a").get(0).attr("href"));
                         continue;
                     }
 
@@ -130,7 +130,7 @@ public class Crawler1ParsePlugin implements CrawlerParse {
 
                     // 连载状态
                     if (i == 2) {
-                        crawlerSearchDto.setStatus(BookSerialStatus.toValue(element.text()));
+                        crawlerSearchDto.setStatus(BookSerialStatus.toValue(element.text()).getDesc());
                     }
                 }
 
