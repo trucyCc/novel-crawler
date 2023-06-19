@@ -134,4 +134,6 @@ public class GlobalExceptionHandler {
         log.error("捕捉异常：BindException ", ex);
         return ApiResponse.builder().code(500).message("未知错误").build();
     }
+
+
 }

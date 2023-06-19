@@ -5,11 +5,6 @@ spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     default-property-inclusion: non_null
-  data:
-    mongodb:
-      host: 127.0.0.1
-      port: 4523
-      database: novel_crawler
 
 springdoc:
   default-flat-param-object: true
