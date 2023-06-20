@@ -1,7 +1,9 @@
 
-const ChapterTitle = () => {
+const ChapterTitle = ({title}) => {
   return (
-    <div>ChapterTitle</div>
+    <div>
+      <h1 className="text-2xl font-bold">{title}</h1>
+    </div>
   )
 }
 

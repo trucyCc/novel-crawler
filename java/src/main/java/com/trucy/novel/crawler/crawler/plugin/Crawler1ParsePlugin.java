@@ -325,7 +325,7 @@ public class Crawler1ParsePlugin implements CrawlerParse {
                 log.error("[Plugin Error] 查询数据失败，获取章节名失败(text)! pluginName：{}, titleElements：{}", pluginName, titleElements);
                 return chapterDto;
             }
-            chapterDto.setName(titleElement.text());
+            chapterDto.setName(titleElement.text().replace("_笔趣阁", ""));
 
             // 章节内容
             val contentElement = doc.getElementById("content");

@@ -1,9 +1,9 @@
 import React from "react";
 
-const ChapterContent = ({ chapterId }) => {
+const ChapterContent = ({ content }) => {
   return (
-    <div>
-        Chapter Content
+    <div className="leading-10 sm:w-4/6 sm:text-2xl sm:leading-loose	">
+      <div dangerouslySetInnerHTML={{ __html: content }}></div>
     </div>
   );
 };
