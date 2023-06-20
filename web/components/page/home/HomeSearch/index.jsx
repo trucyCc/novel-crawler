@@ -65,16 +65,14 @@ const HomeSearch = ({ searchHttp }) => {
     setSearchButtonToLoading();
 
     // 提示搜索内容
-    onSubmitMessageToast(data);
+    // onSubmitMessageToast(data);
 
     // 获取搜索结果
     const resultData = await getSearchData(data.searchText);
-    console.log(resultData);
 
-    // 放入redux
+    // 放入reduxf
     if (resultData.code === 200) {
       dispatch(setStoreSearchData(resultData.data));
-      console.log(searchDataStore);
     } else {
       errorMessageToast({ message: resultData.message });
     }

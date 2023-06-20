@@ -1,15 +1,13 @@
-"use client"
-import { useRouter } from 'next/navigation';
+import NovalInfo from "@/components/page/noval/NovalInfo";
 
-const NovalPage = () => {
-  const router = useRouter();
 
-  // 获取路由参数值
-  const { novalId } = router.query;
+const NovalPage = ({params}) => {
   return (
-    <div>
-      NovalPage
-      <h1>Noval ID: {novalId}</h1>
+    <div className="w-full h-full  flex  flex-col sm:p-10 p-3 overflow-auto">
+        <NovalInfo  
+            novalId={params.novalId}
+            searchHttp={process.env.SERVER_HTTP}
+        />
     </div>
   );
 };

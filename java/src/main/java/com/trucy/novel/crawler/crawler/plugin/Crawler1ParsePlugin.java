@@ -90,6 +90,7 @@ public class Crawler1ParsePlugin implements CrawlerParse {
                     if (i == 0) {
                         crawlerSearchDto.setName(element.getElementsByTag("a").get(0).text());
                         crawlerSearchDto.setUrl(url + element.getElementsByTag("a").get(0).attr("href"));
+                        crawlerSearchDto.setId(element.getElementsByTag("a").get(0).attr("href").replaceAll("/", ""));
                         continue;
                     }
 
@@ -262,6 +263,10 @@ public class Crawler1ParsePlugin implements CrawlerParse {
                     }
                     continue;
                 }
+                val tageName = element.tag().getName();
+                if (StringUtils.isNotBlank(tageName) && tageName.equals("a")) {
+                    continue;
+                }
 
                 val aElements = element.getElementsByTag("a");
                 if (CollectionUtil.isEmpty(aElements)) {
@@ -274,10 +279,14 @@ public class Crawler1ParsePlugin implements CrawlerParse {
                     return crawlerBookDto;
                 }
 
+                val chapterHref = aElement.attr("href");
+                int index = chapterHref.indexOf('/', chapterHref.indexOf('/') + 1);
+                val chapterId = chapterHref.substring(0, index).replace(".html", "").replace("/", "");
 
                 crawlerChatterDtoList.add(CrawlerChapterDto.builder()
+                        .id(chapterId)
                         .name(aElement.text())
-                        .url(aElement.attr("href"))
+                        .url(url + chapterHref)
                         .build());
             }
 

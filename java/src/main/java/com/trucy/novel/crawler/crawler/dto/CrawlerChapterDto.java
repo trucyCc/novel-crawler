@@ -9,6 +9,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CrawlerChapterDto {
+    private String id;
     private String url;
     private String name;
     private String htmlContent;

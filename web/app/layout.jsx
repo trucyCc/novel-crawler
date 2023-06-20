@@ -17,7 +17,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={inter.className}>
         <Provider store={store}>
-          <main className="flex sm:p-20 justify-center w-screen h-screen ">
+          <main className="flex  justify-center w-screen h-screen ">
             {children}
           </main>
         </Provider>

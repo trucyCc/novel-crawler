@@ -10,6 +10,7 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CrawlerSearchDto {
+    private String id;
     private String name;
     private String author;
     private String url;
