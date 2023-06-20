@@ -1,8 +1,8 @@
-"use client"
+"use client";
 import "./globals.css";
 import { Inter } from "next/font/google";
 import { Toaster } from "@/components/ui/tosater";
-import { Provider } from 'react-redux';
+import { Provider } from "react-redux";
 import store from "@/stores/store";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -21,7 +21,6 @@ export default function RootLayout({ children }) {
             {children}
           </main>
         </Provider>
-
         <Toaster />
       </body>
     </html>

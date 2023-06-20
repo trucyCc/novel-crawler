@@ -9,24 +9,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { useSelector, useDispatch } from "react-redux";
-import { nanoid } from "nanoid";
 import { useRouter } from "next/navigation";
-import { toast } from "@/components/ui/use-toast";
 import { Img } from "react-image";
-import NovalChapterList from "../NovalChapterList";
+import NovelChapterList from "../NovelChapterList";
+import { setStoreChapters } from "@/stores/ChapterSlice";
 
-const NovalInfo = ({ searchHttp, novalId }) => {
+const NovelInfo = ({ searchHttp, novelId }) => {
   // store
   const searchDataStore = useSelector((state) => state.searchData);
+  const chaptersStore = useSelector((state) => state.chapters)
+  const dispatch = useDispatch();
 
   // router
   const router = useRouter();
 
-  // noval info
-  const [novalInfo, setNovalInfo] = useState(undefined);
-  const [novalChapters, setNovalChapters] = useState(undefined);
+  // novel info
+  const [novelInfo, setNovelInfo] = useState(undefined);
+  const [novelChapters, setNovelChapters] = useState(undefined);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,38 +35,39 @@ const NovalInfo = ({ searchHttp, novalId }) => {
         return;
       }
 
-      const novalSearchInfo = searchDataStore.resultData.find(
-        (d) => d.id === novalId
+      const novelSearchInfo = searchDataStore.resultData.find(
+        (d) => d.id === novelId
       );
 
       if (
-        novalSearchInfo === undefined ||
-        novalSearchInfo.url === undefined ||
-        novalSearchInfo.url.trim().length === 0
+        novelSearchInfo === undefined ||
+        novelSearchInfo.url === undefined ||
+        novelSearchInfo.url.trim().length === 0
       ) {
         router.push(`/`);
         return;
       }
 
-      const novalData = await getNovalInfo(novalSearchInfo.url);
-      if (novalData.code !== 200) {
+      const novelData = await getNovelInfo(novelSearchInfo.url);
+      if (novelData.code !== 200) {
         router.push(`/`);
         return;
       }
 
-      const chapters = novalData.data.chapters;
-      novalData.data.chapters = {};
-      setNovalInfo(novalData.data);
-      setNovalChapters(chapters);
+      const chapters = novelData.data.chapters;
+      novelData.data.chapters = {};
+      setNovelInfo(novelData.data);
+      setNovelChapters(chapters);
+      dispatch(setStoreChapters(chapters));
     };
 
     fetchData();
   }, []);
 
-  // 获取Noval Info
-  const getNovalInfo = async (novalUrl) => {
+  // 获取Novel Info
+  const getNovelInfo = async (novelUrl) => {
     const params = new URLSearchParams();
-    params.append("url", novalUrl);
+    params.append("url", novelUrl);
 
     const queryString = params.toString();
     const url = `${searchHttp}/crawler/book`;
@@ -88,23 +89,23 @@ const NovalInfo = ({ searchHttp, novalId }) => {
   };
 
   return (
-    novalInfo && (
+    novelInfo && (
       <div>
         <Card>
           <CardHeader>
             <CardTitle>
-              <Img src={novalInfo.coverUrl} alt="Noval Image" />
+              <Img src={novelInfo.coverUrl} alt="Novel Image" />
 
-              <div className="pt-4">{novalInfo.name}</div>
+              <div className="pt-4">{novelInfo.name}</div>
               <div></div>
             </CardTitle>
             <CardDescription>
-              <div>{novalInfo.author}</div>
-              <div>简 介：{novalInfo.intro}</div>
+              <div>{novelInfo.author}</div>
+              <div>简 介：{novelInfo.intro}</div>
             </CardDescription>
           </CardHeader>
           <CardContent className="grid gap-4">
-            <NovalChapterList chapters={novalChapters} />
+            <NovelChapterList chapters={novelChapters} />
           </CardContent>
           <CardFooter></CardFooter>
         </Card>
@@ -113,4 +114,4 @@ const NovalInfo = ({ searchHttp, novalId }) => {
   );
 };
 
-export default NovalInfo;
+export default NovelInfo;

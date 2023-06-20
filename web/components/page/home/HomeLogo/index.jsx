@@ -1,6 +1,6 @@
-"use client"
+"use client";
 import Image from "next/image";
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 
 const HomeLogo = () => {
   // store

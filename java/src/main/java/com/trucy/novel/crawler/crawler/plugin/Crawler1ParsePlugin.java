@@ -145,12 +145,12 @@ public class Crawler1ParsePlugin implements CrawlerParse {
     }
 
     @Override
-    public CrawlerBookDto crawlerBook(String url) {
+    public CrawlerBookDto crawlerBook(String novelUrl) {
         val crawlerBookDto = new CrawlerBookDto();
         val crawlerChatterDtoList = new ArrayList<CrawlerChapterDto>();
 
         val client = getConnectClient();
-        val request = getRequest(url);
+        val request = getRequest(novelUrl);
 
         try (val response = client.newCall(request).execute()) {
             // 获取查询结果
@@ -281,7 +281,7 @@ public class Crawler1ParsePlugin implements CrawlerParse {
 
                 val chapterHref = aElement.attr("href");
                 int index = chapterHref.indexOf('/', chapterHref.indexOf('/') + 1);
-                val chapterId = chapterHref.substring(0, index).replace(".html", "").replace("/", "");
+                val chapterId = chapterHref.substring(index, chapterHref.length()).replace(".html", "").replace("/", "");
 
                 crawlerChatterDtoList.add(CrawlerChapterDto.builder()
                         .id(chapterId)
@@ -301,12 +301,12 @@ public class Crawler1ParsePlugin implements CrawlerParse {
     }
 
     @Override
-    public CrawlerChapterDto crawlerChapter(String url) {
+    public CrawlerChapterDto crawlerChapter(String novelUrl) {
         val chapterDto = new CrawlerChapterDto();
-        chapterDto.setUrl(url);
+        chapterDto.setUrl(novelUrl);
 
         val client = getConnectClient();
-        val request = getRequest(url);
+        val request = getRequest(novelUrl);
 
         try (val response = client.newCall(request).execute()) {
             // 获取查询结果

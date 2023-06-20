@@ -1,7 +1,6 @@
 "use client";
-import Link from "next/link";
-import React, { useState, useContext, useEffect } from "react";
-import { useSelector, useDispatch } from "react-redux";
+import React from "react";
+import { useSelector } from "react-redux";
 import { nanoid } from "nanoid";
 import {
   Table,
@@ -12,8 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useRouter } from 'next/navigation';
-
+import { useRouter } from "next/navigation";
 
 const HomeSearchTable = () => {
   // store
@@ -35,7 +33,9 @@ const HomeSearchTable = () => {
             <TableHead>最新章节</TableHead>
             <TableHead className="sm:table-cell hidden">最后更新时间</TableHead>
             <TableHead className="sm:table-cell hidden">连载状态</TableHead>
-            <TableHead className="text-right sm:table-cell  hidden">总字数</TableHead>
+            <TableHead className="text-right sm:table-cell  hidden">
+              总字数
+            </TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -44,7 +44,7 @@ const HomeSearchTable = () => {
               key={nanoid()}
               onClick={() => {
                 console.log(row);
-                router.push(`noval/${row.id}`)
+                router.push(`novel/${row.id}`);
               }}
             >
               <TableCell className="font-medium">{row.name}</TableCell>
@@ -53,7 +53,9 @@ const HomeSearchTable = () => {
               <TableCell className="sm:table-cell hidden">
                 {row.lastUpdateTime}
               </TableCell>
-              <TableCell className="sm:table-cell hidden">{row.status}</TableCell>
+              <TableCell className="sm:table-cell hidden">
+                {row.status}
+              </TableCell>
               <TableCell className="text-right sm:table-cell hidden">
                 {row.wordCount}
               </TableCell>
