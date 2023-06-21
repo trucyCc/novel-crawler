@@ -22,6 +22,13 @@ class _ChapterScreenState extends ConsumerState<ChapterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // 获取路由参数
+    final routeParams =
+        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+
+    String? chapterName = routeParams['name'];
+    chapterName ??= "No Chapter Name";
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -34,10 +41,11 @@ class _ChapterScreenState extends ConsumerState<ChapterScreen> {
             Container(
               color: Colors.yellow[100],
               child: ChapterContent(
+                chapterUrl: routeParams['url'],
                 onUpdateShowConfigBar: updateShowConfigBar,
               ),
             ),
-            if (showConfigBar) const ChapterTopBar(chapterName: "Chapter Name"),
+            if (showConfigBar) ChapterTopBar(chapterName: chapterName),
           ],
         ),
       ),

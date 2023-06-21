@@ -17,6 +17,7 @@ class NovelBody extends ConsumerWidget {
       arguments: {
         "id": chapter['id'],
         "url": chapter['url'],
+        "name": chapter['name'],
       },
     );
   }
