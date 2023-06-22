@@ -38,12 +38,10 @@ class _ChapterScreenState extends ConsumerState<ChapterScreen> {
       child: Scaffold(
         body: Stack(
           children: [
-            Container(
-              color: Colors.yellow[100],
-              child: ChapterContent(
-                chapterUrl: routeParams['url'],
-                onUpdateShowConfigBar: updateShowConfigBar,
-              ),
+            ChapterContent(
+              chapterUrl: routeParams['url'],
+              onUpdateShowConfigBar: updateShowConfigBar,
+              textStyle: const TextStyle(color: Colors.black, fontSize: 23),
             ),
             if (showConfigBar) ChapterTopBar(chapterName: chapterName),
           ],

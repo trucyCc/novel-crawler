@@ -333,7 +333,7 @@ public class Crawler1ParsePlugin implements CrawlerParse {
                 log.error("[Plugin Error] 查询数据失败，获取章节内容失败(content)! pluginName：{}, doc：{}", pluginName, doc);
                 return chapterDto;
             }
-            chapterDto.setHtmlContent(contentElement.html());
+            chapterDto.setHtmlContent(contentElement.html().replaceAll("<p>　　;</p>", ""));
 
         } catch (IOException e) {
             log.error("[Plugin Error] pluginName：{}", pluginName, e);

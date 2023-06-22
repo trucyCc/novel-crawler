@@ -1,20 +1,31 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
+enum Direction {
+  next,
+  prev,
+}
+
 class ChapterContent extends ConsumerStatefulWidget {
+  final Function onUpdateShowConfigBar;
+  final String chapterUrl;
+  final TextStyle textStyle;
+
   const ChapterContent({
     Key? key,
     required this.onUpdateShowConfigBar,
     required this.chapterUrl,
+    this.textStyle = const TextStyle(
+      color: Colors.black,
+      fontSize: 30,
+    ),
   }) : super(key: key);
-  final Function onUpdateShowConfigBar;
-  final String chapterUrl;
 
   @override
   ConsumerState<ChapterContent> createState() => _ChapterContentState();
@@ -26,18 +37,30 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
   // 加载状态
   bool showLoading = true;
 
-  // 页数
+  // 当前页数
   int currentPageIndex = 0;
 
+  final _pageKey = GlobalKey();
+
   // Page页面控制器
-  final PageController _pageController = PageController();
+  late PageController _pageController;
+
+  String chapterName = "";
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    _pageController = PageController(initialPage: currentPageIndex);
+  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
     // 获取当前页面的内容，并压入pages
-    loadData(widget.chapterUrl);
+    loadData(widget.chapterUrl, Direction.next);
   }
 
   @override
@@ -46,10 +69,13 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     super.dispose();
   }
 
-  void loadData(String url) async {
-    if(url.isEmpty) {
+  Future<List<String>> loadData(String url, Direction direction) async {
+    setState(() {
+      showLoading = true;
+    });
+    if (url.isEmpty) {
       showErrorSnackBar('请求失败！章节URL为空！请选择其他章节！');
-      return;
+      return [];
     }
 
     // 发送请求获取书籍详细信息
@@ -58,7 +84,7 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     // 请求失败
     if (responseFuture.statusCode != 200) {
       showErrorSnackBar('请求错误，状态：${responseFuture.statusCode}');
-      return;
+      return [];
     }
 
     // 解析数据
@@ -67,17 +93,104 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     // 服务器错误
     if (jsonData['code'] != 200) {
       showErrorSnackBar('${jsonData['message']}');
-      return;
+      return [];
+    }
+    String chapterContent = jsonData['data']['htmlContent'].toString();
+
+    chapterContent =
+        chapterContent.replaceAll("<p>", "\n").replaceAll("</p>", "");
+
+    final tempPage = _paginate(chapterContent);
+
+    // 新添加的页面长度
+    final tempPageSize = tempPage.length;
+
+    // 如果是下一页，直接追加，当前页不变
+    if (direction == Direction.next) {
+      print("新添加的页面长度：$tempPageSize");
+      setState(() {
+        pages.addAll(tempPage);
+      });
+      print("添加后的页面长度：${pages.length}");
     }
 
-    print(jsonData['data']);
+    // 如果是上一页，追加到前面
+    if (direction == Direction.prev) {
+      setState(() {
+        pages.insertAll(0, tempPage);
+        currentPageIndex = tempPageSize;
+      });
 
-    final content = jsonData['htmlContent'];
+      print("跳转对应页面${currentPageIndex + 1}");
+      _pageController.jumpToPage((currentPageIndex - 1));
+    }
 
-    // 加载结束
     setState(() {
       showLoading = false;
     });
+
+    return tempPage;
+  }
+
+  // 分页
+  List<String> _paginate(String longText) {
+    // 获取页面尺寸
+    // 获取当前Widget尺寸
+    final pageSize =
+        (_pageKey.currentContext?.findRenderObject() as RenderBox).size;
+
+    final List<String> tempPages = [];
+
+    // 使用textPainter进行分页
+    final textSpan = TextSpan(
+      text: longText,
+      style: TextStyle(
+        color: widget.textStyle.color,
+        fontSize: widget.textStyle.fontSize,
+      ),
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout(
+      minWidth: 0,
+      maxWidth: pageSize.width,
+    );
+
+    // https://medium.com/swlh/flutter-line-metrics-fd98ab180a64
+    // 每个LineMetrics表示文本的一行，可以获取行的信息
+    List<LineMetrics> lines = textPainter.computeLineMetrics();
+    double currentPageBottom = pageSize.height;
+    int currentPageStartIndex = 0;
+    int currentPageEndIndex = 0;
+
+    // 遍历每一行
+    for (int i = 0; i < lines.length; i++) {
+      final line = lines[i];
+
+      final left = line.left;
+      final top = line.baseline - line.ascent;
+      final bottom = line.baseline + line.descent;
+
+      // Current line overflow page
+      if (currentPageBottom < bottom) {
+        // https://stackoverflow.com/questions/56943994/how-to-get-the-raw-text-from-a-flutter-textbox/56943995#56943995
+        currentPageEndIndex =
+            textPainter.getPositionForOffset(Offset(left, top)).offset;
+        final pageText =
+            longText.substring(currentPageStartIndex, currentPageEndIndex);
+        tempPages.add(pageText);
+
+        currentPageStartIndex = currentPageEndIndex;
+        currentPageBottom = top + pageSize.height;
+      }
+    }
+
+    final lastPageText = longText.substring(currentPageStartIndex);
+    tempPages.add(lastPageText);
+
+    return tempPages;
   }
 
   // 获取章节页面内容
@@ -113,47 +226,46 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
 
   // 创建Content页面
   Widget buildPage(String page) {
-    // 首先需要判断当前页面是不是一个带有标题的页面
-
-    // 如果是带有标题的页面则先给一个标题，然后再显示内容
-
-    // 如果不是，则直接显示内容
-
     return Container(
-      alignment: Alignment.center,
       child: Text(
         page,
-        style: const TextStyle(fontSize: 24),
+        style: TextStyle(fontSize: widget.textStyle.fontSize),
       ),
     );
   }
 
   // 页面点击事件
-  void pageTopDown(TapDownDetails details) {
+  void pageTopDown(TapDownDetails details) async {
     final screenWidth = MediaQuery.of(context).size.width;
     final tapX = details.globalPosition.dx;
     final centerLine = screenWidth / 2;
 
-    print(pages.toString());
-
-    var random = Random();
-    setState(() {
-      pages.add(random.nextInt(100).toString());
-    });
-
     // 点击左侧，翻到上一页
     if (tapX < centerLine - 70) {
       if (currentPageIndex >= 0) {
-        _pageController.previousPage(
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
+        // 当前页等于最小页面
+        if (currentPageIndex == 0) {
+          await loadingPrePage();
+        } else {
+          _pageController.previousPage(
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeInOut,
+          );
+        }
       }
     }
 
+    print('currentPageIndex: $currentPageIndex');
+
     // 点击右侧，翻到下一页
     if (tapX > centerLine + 70) {
-      if (currentPageIndex < pages.length - 1) {
+      if (currentPageIndex <= pages.length - 1) {
+        print("click 下一页，pageLength ${pages.length}");
+        // 当前页等于最大页面
+        if (currentPageIndex == pages.length - 1) {
+          await loadingNextPage();
+        }
+
         _pageController.nextPage(
           duration: const Duration(milliseconds: 500),
           curve: Curves.easeInOut,
@@ -167,27 +279,66 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     }
   }
 
+  Future<List<String>> loadingPrePage() async {
+    setState(() {
+      showLoading = true;
+    });
+
+    return await loadData(widget.chapterUrl, Direction.prev);
+  }
+
+  Future<List<String>> loadingNextPage() async {
+    setState(() {
+      showLoading = true;
+    });
+
+    return await loadData(widget.chapterUrl, Direction.next);
+  }
+
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTapDown: (TapDownDetails details) {
-        pageTopDown(details);
-      },
-      child: Column(
-        children: [
-          Expanded(
-            child: PageView(
-              controller: _pageController,
-              onPageChanged: (index) {
-                setState(() {
-                  currentPageIndex = 0;
-                });
+    return MaterialApp(
+      home: Scaffold(
+        body: Container(
+          color: Colors.yellow[100],
+          child: SafeArea(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onTapDown: (TapDownDetails details) {
+                pageTopDown(details);
               },
-              children: pages.map((page) => buildPage(page)).toList(),
+              child: Stack(
+                children: [
+                  Column(
+                    children: [
+                      Container(height: 30, color: Colors.black, child: Text(chapterName),),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20.0),
+                          child: SizedBox.expand(
+                            key: _pageKey,
+                            child: PageView(
+                              controller: _pageController,
+                              onPageChanged: (index) {
+                                currentPageIndex = index;
+                              },
+                              children:
+                                  pages.map((page) => buildPage(page)).toList(),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (showLoading)
+                    const Center(
+                      child: CircularProgressIndicator(),
+                    ),
+                ],
+              ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }

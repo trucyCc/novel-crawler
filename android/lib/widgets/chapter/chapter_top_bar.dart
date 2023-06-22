@@ -24,7 +24,7 @@ class ChapterTopBar extends ConsumerWidget {
           ),
         ),
         child: AppBar(
-          backgroundColor: Colors.transparent,
+          backgroundColor: Colors.yellow[100],
           elevation: 0,
           title: Text(chapterName, style:const TextStyle(fontSize: 20),),
         ),
