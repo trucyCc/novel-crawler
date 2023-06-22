@@ -5,9 +5,11 @@ class NovelBody extends ConsumerWidget {
   const NovelBody({
     Key? key,
     required this.chapters,
+    required this.bookName,
   }) : super(key: key);
 
   final List<dynamic> chapters;
+  final String bookName;
 
   // 跳转指定Novel
   void goToChapter(BuildContext context, Map<String, dynamic> chapter) {
@@ -17,7 +19,7 @@ class NovelBody extends ConsumerWidget {
       arguments: {
         "id": chapter['id'],
         "url": chapter['url'],
-        "name": chapter['name'],
+        "name": bookName,
       },
     );
   }

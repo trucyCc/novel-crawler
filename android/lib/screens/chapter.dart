@@ -26,8 +26,8 @@ class _ChapterScreenState extends ConsumerState<ChapterScreen> {
     final routeParams =
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
 
-    String? chapterName = routeParams['name'];
-    chapterName ??= "No Chapter Name";
+    String? bookName = routeParams['name'];
+    bookName ??= "No Book Name";
 
     return GestureDetector(
       onTap: () {
@@ -39,11 +39,12 @@ class _ChapterScreenState extends ConsumerState<ChapterScreen> {
         body: Stack(
           children: [
             ChapterContent(
+              chapterId: routeParams['id'],
               chapterUrl: routeParams['url'],
               onUpdateShowConfigBar: updateShowConfigBar,
               textStyle: const TextStyle(color: Colors.black, fontSize: 23),
             ),
-            if (showConfigBar) ChapterTopBar(chapterName: chapterName),
+            if (showConfigBar) ChapterTopBar(bookName: bookName),
           ],
         ),
       ),

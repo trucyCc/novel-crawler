@@ -4,9 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 class ChapterTopBar extends ConsumerWidget {
   const ChapterTopBar({
     Key? key,
-    required this.chapterName,
+    required this.bookName,
   }) : super(key: key);
-  final String chapterName;
+  final String bookName;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,7 +26,7 @@ class ChapterTopBar extends ConsumerWidget {
         child: AppBar(
           backgroundColor: Colors.yellow[100],
           elevation: 0,
-          title: Text(chapterName, style:const TextStyle(fontSize: 20),),
+          title: Text(bookName, style:const TextStyle(fontSize: 20),),
         ),
       ),
     );

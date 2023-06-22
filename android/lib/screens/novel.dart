@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:android/provider/chapter_provider.dart';
 import 'package:android/widgets/novel/novel_body.dart';
 import 'package:android/widgets/novel/novel_head.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
-
 
 class NovelScreen extends ConsumerStatefulWidget {
   const NovelScreen({Key? key}) : super(key: key);
@@ -50,7 +50,9 @@ class _NovelScreenState extends ConsumerState<NovelScreen> {
       return;
     }
 
-    print(jsonData['data']);
+    ref
+        .read(chapterProvider.notifier)
+        .updateChapters(jsonData['data']['chapters']);
 
     // 加载结束
     setState(() {
@@ -129,6 +131,7 @@ class _NovelScreenState extends ConsumerState<NovelScreen> {
           Expanded(
             flex: 3,
             child: NovelBody(
+              bookName: novelInfo['name'],
               chapters: novelInfo['chapters'],
             ),
           ),

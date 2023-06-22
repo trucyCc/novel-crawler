@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 
+import 'package:android/provider/chapter_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -16,6 +17,7 @@ class ChapterContent extends ConsumerStatefulWidget {
   final Function onUpdateShowConfigBar;
   final String chapterUrl;
   final TextStyle textStyle;
+  final String chapterId;
 
   const ChapterContent({
     Key? key,
@@ -24,7 +26,7 @@ class ChapterContent extends ConsumerStatefulWidget {
     this.textStyle = const TextStyle(
       color: Colors.black,
       fontSize: 30,
-    ),
+    ), required this.chapterId,
   }) : super(key: key);
 
   @override
@@ -46,6 +48,9 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
   late PageController _pageController;
 
   String chapterName = "";
+
+  int currentPrevPageIndex = 1;
+  int currentNextPageIndex = 1;
 
   @override
   void initState() {
@@ -107,11 +112,9 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
 
     // 如果是下一页，直接追加，当前页不变
     if (direction == Direction.next) {
-      print("新添加的页面长度：$tempPageSize");
       setState(() {
         pages.addAll(tempPage);
       });
-      print("添加后的页面长度：${pages.length}");
     }
 
     // 如果是上一页，追加到前面
@@ -121,7 +124,6 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
         currentPageIndex = tempPageSize;
       });
 
-      print("跳转对应页面${currentPageIndex + 1}");
       _pageController.jumpToPage((currentPageIndex - 1));
     }
 
@@ -224,6 +226,22 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
+  void showWarningSnackBar(String message) {
+    final snackBar = SnackBar(
+      duration: const Duration(milliseconds: 600),
+      content: Text(message, style: const TextStyle(color: Colors.white),),
+      backgroundColor: Colors.black,
+      action: SnackBarAction(
+        label: 'X',
+        onPressed: () {
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
+        },
+      ),
+    );
+
+    ScaffoldMessenger.of(context).showSnackBar(snackBar);
+  }
+
   // 创建Content页面
   Widget buildPage(String page) {
     return Container(
@@ -255,12 +273,9 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
       }
     }
 
-    print('currentPageIndex: $currentPageIndex');
-
     // 点击右侧，翻到下一页
     if (tapX > centerLine + 70) {
       if (currentPageIndex <= pages.length - 1) {
-        print("click 下一页，pageLength ${pages.length}");
         // 当前页等于最大页面
         if (currentPageIndex == pages.length - 1) {
           await loadingNextPage();
@@ -279,21 +294,72 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     }
   }
 
-  Future<List<String>> loadingPrePage() async {
+  Future<List<String>?> loadingPrePage() async {
     setState(() {
       showLoading = true;
     });
 
-    return await loadData(widget.chapterUrl, Direction.prev);
+    // 获取当前书籍在 provider cache 中的位置
+    final chaptersCache = ref.watch(chapterProvider) as List<dynamic>;
+    int chapterIndex =  chaptersCache.indexWhere((ch) => ch['id'] == widget.chapterId);
+    if(chapterIndex == -1) {
+      showErrorSnackBar("章节错误，请重新搜索书籍");
+      setState(() {
+        showLoading = false;
+      });
+      return null;
+    }
+
+    if((chapterIndex - currentPrevPageIndex) < 0) {
+      showWarningSnackBar("没有上一章节了");
+      setState(() {
+        showLoading = false;
+      });
+      return null;
+    }
+
+    // 上一章的位置是
+    int prevChapterIndex = chapterIndex - currentPrevPageIndex;
+    currentPrevPageIndex = currentPrevPageIndex + 1;
+    Map<String,dynamic> chapterCache = chaptersCache[prevChapterIndex];
+
+    return await loadData(chapterCache['url'], Direction.prev);
   }
 
-  Future<List<String>> loadingNextPage() async {
+
+  Future<List<String>?> loadingNextPage() async {
     setState(() {
       showLoading = true;
     });
 
-    return await loadData(widget.chapterUrl, Direction.next);
+    // 获取当前书籍在 provider cache 中的位置
+    final chaptersCache = ref.watch(chapterProvider) as List<dynamic>;
+    int chapterIndex =  chaptersCache.indexWhere((ch) => ch['id'] == widget.chapterId);
+    if(chapterIndex == -1) {
+      showErrorSnackBar("章节错误，请重新搜索书籍");
+      setState(() {
+        showLoading = false;
+      });
+      return null;
+    }
+
+    if((chapterIndex + currentNextPageIndex) >= chaptersCache.length) {
+      showWarningSnackBar("这已经是最后章了");
+      setState(() {
+        showLoading = false;
+      });
+      return null;
+    }
+
+    // 下一章的位置是
+    int nextChapterIndex = chapterIndex + currentNextPageIndex;
+    currentNextPageIndex = currentNextPageIndex + 1;
+    Map<String,dynamic> chapterCache = chaptersCache[nextChapterIndex];
+
+    return await loadData(chapterCache['url'], Direction.next);
   }
+
+
 
   @override
   Widget build(BuildContext context) {
