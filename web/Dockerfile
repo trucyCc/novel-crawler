@@ -11,5 +11,8 @@ RUN npm install
 # 复制项目文件
 COPY . /app/
 
+# 添加root权限
+USER root
+
 # 启动命令
 CMD ["npm", "run", "dev"]
