@@ -1,16 +1,16 @@
 version: '3'
 services:
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile
-    ports:
-      - '8347:3000'
-    volumes:
-      - ./web:/app
-      - /app/node_modules
-    container_name: crawler-novel-web
-    cpus: 0.6
+  # 服务器资源太少跑不起来，暂时禁用了
+  # web:
+  #   build:
+  #     context: ./web
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - '8347:3000'
+  #   volumes:
+  #     - ./web:/app
+  #     - /app/node_modules
+  #   container_name: crawler-novel-web
   java:
     build:
       context: ./java
