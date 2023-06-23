@@ -9,8 +9,8 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.trucy</groupId>
-    <artifactId>java</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <artifactId>novel_crawler</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
     <name>novel_crawler</name>
     <description>java</description>
     <properties>

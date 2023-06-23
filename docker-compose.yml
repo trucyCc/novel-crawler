@@ -1,0 +1,19 @@
+version: '3'
+services:
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    ports:
+      - '8347:3000'
+    volumes:
+      - ./web:/app
+      - /app/node_modules
+    container_name: crawler-novel-web
+  java:
+    build:
+      context: ./java
+      dockerfile: Dockerfile
+    ports:
+      - '7873:8989'
+    container_name: crawler-novel-java

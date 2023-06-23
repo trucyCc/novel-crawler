@@ -7,9 +7,9 @@ spring:
     default-property-inclusion: non_null
 
 springdoc:
-  default-flat-param-object: true
+  default-flat-param-object: false
   api-docs:
-    enabled: true # 是否开启接口文档
+    enabled: false # 是否开启接口文档
 #  swagger-ui:
 #    # 持久化认证数据，如果设置为 true，它会保留授权数据并且不会在浏览器关闭/刷新时丢失
 #    persistAuthorization: true

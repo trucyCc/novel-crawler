@@ -7,10 +7,6 @@ import store from "@/stores/store";
 
 const inter = Inter({ subsets: ["latin"] });
 
-export const metadata = {
-  title: "Novel Crawler",
-  description: "1.0 no auth no cache",
-};
 
 export default function RootLayout({ children }) {
   return (
