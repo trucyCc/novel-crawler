@@ -10,6 +10,7 @@ services:
       - ./web:/app
       - /app/node_modules
     container_name: crawler-novel-web
+    cpus: 0.6
   java:
     build:
       context: ./java
