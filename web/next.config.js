@@ -5,6 +5,7 @@ const nextConfig = {
         optimizeCss: true, // CSS
         workerThreads: true, // 启用 Worker Threads
         pageEnv: true, // 启用页面环境
+        cpus: 1
     },
 }
 
