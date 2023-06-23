@@ -53,6 +53,8 @@ class _HomeSearchWidgetState extends ConsumerState<HomeSearchWidget> {
     var url =
         Uri.http(dotenv.env['SERVER_HTTP']!, '/crawler/query', queryParameters);
 
+    print(url);
+
     return await http.get(url, headers: {
       HttpHeaders.contentTypeHeader: 'application/x-www-form-urlencoded',
       HttpHeaders.acceptCharsetHeader: 'gzip'

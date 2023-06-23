@@ -1,8 +1,12 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- 添加网络权限声明 -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
-        android:label="android"
+        android:label="瓜虫小说"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+
         <activity
             android:name=".MainActivity"
             android:exported="true"
