@@ -21,7 +21,5 @@ COPY . /app
 
 RUN mvn install -DskipTests
 
-
-
 # 启动命令
 CMD ["java", "-jar", "/app/target/novel_crawler-1.0.0-SNAPSHOT.jar", "--spring.profiles.active=prod"]
