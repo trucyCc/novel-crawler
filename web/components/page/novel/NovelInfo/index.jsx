@@ -18,7 +18,6 @@ import { setStoreChapters } from "@/stores/ChapterSlice";
 const NovelInfo = ({ searchHttp, novelId }) => {
   // store
   const searchDataStore = useSelector((state) => state.searchData);
-  const chaptersStore = useSelector((state) => state.chapters)
   const dispatch = useDispatch();
 
   // router
@@ -30,7 +29,11 @@ const NovelInfo = ({ searchHttp, novelId }) => {
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!(searchDataStore.resultData.length > 0)) {
+      if (
+        !(searchDataStore.resultData.length > 0) ||
+        searchDataStore.source === undefined ||
+        searchDataStore.source === ""
+      ) {
         router.push(`/`);
         return;
       }
@@ -48,7 +51,10 @@ const NovelInfo = ({ searchHttp, novelId }) => {
         return;
       }
 
-      const novelData = await getNovelInfo(novelSearchInfo.url);
+      const novelData = await getNovelInfo(
+        searchDataStore.source,
+        novelSearchInfo.url
+      );
       if (novelData.code !== 200) {
         router.push(`/`);
         return;
@@ -65,9 +71,10 @@ const NovelInfo = ({ searchHttp, novelId }) => {
   }, []);
 
   // 获取Novel Info
-  const getNovelInfo = async (novelUrl) => {
+  const getNovelInfo = async (source, novelUrl) => {
     const params = new URLSearchParams();
     params.append("url", novelUrl);
+    params.append("source", source);
 
     const queryString = params.toString();
     const url = `${searchHttp}/crawler/book`;

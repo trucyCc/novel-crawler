@@ -43,7 +43,6 @@ const HomeSearchTable = () => {
             <TableRow
               key={nanoid()}
               onClick={() => {
-                console.log(row);
                 router.push(`novel/${row.id}`);
               }}
             >

@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:android/provider/chapter_provider.dart';
+import 'package:android/provider/search_provider.dart';
 import 'package:android/widgets/novel/novel_body.dart';
 import 'package:android/widgets/novel/novel_head.dart';
 import 'package:flutter/material.dart';
@@ -33,7 +34,8 @@ class _NovelScreenState extends ConsumerState<NovelScreen> {
         ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
 
     // 发送请求获取书籍详细信息
-    final responseFuture = await getNovelInfoApi(routeParams['url']);
+    final source = ref.read(searchProvider.notifier).getSearchResult().source;
+    final responseFuture = await getNovelInfoApi(source, routeParams['url']);
 
     // 请求失败
     if (responseFuture.statusCode != 200) {
@@ -62,8 +64,8 @@ class _NovelScreenState extends ConsumerState<NovelScreen> {
   }
 
   // 获取书籍详细信息
-  Future<http.Response> getNovelInfoApi(novelUrl) async {
-    final queryParameters = {"url": novelUrl};
+  Future<http.Response> getNovelInfoApi(source, novelUrl) async {
+    final queryParameters = {"url": novelUrl, "source": source};
     var url = Uri.http(dotenv.env['SERVER_HTTP']!, '/crawler/book');
 
     return await http.post(
