@@ -1,4 +1,6 @@
 # novel-crawler V1.0
+![Static Badge](https://img.shields.io/badge/dart-3.0.5-breen) ![Static Badge](https://img.shields.io/badge/flutter-3.10.5-yellow)  ![Static Badge](https://img.shields.io/badge/java-11-blue) ![Static Badge](https://img.shields.io/badge/srpingboot-2.7.11-blue) ![Static Badge](https://img.shields.io/badge/node-16.17.1-green) ![Static Badge](https://img.shields.io/badge/react-18.2.0-orange) ![Static Badge](https://img.shields.io/badge/build-docker%20compose-red)
+
 小说爬虫，包含web和android，支持多源切换  
 完成基础的功能实现，可以爬取指定网站数据，并支持检索  
 完成Web端，Android端的基础实现，可以搜索书籍，查看书籍详情，查看内容实现基本的上下翻页  
