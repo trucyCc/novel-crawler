@@ -1,6 +1,6 @@
 "use client";
 import { Search, Loader2 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -23,11 +23,12 @@ import {
 import { toast } from "@/components/ui/use-toast";
 import { debounce } from "lodash";
 import { useSelector, useDispatch } from "react-redux";
-import { setStoreSearchData } from "@/stores/SearchSlice";
-
+import { setStoreSearchData, setSearchSource } from "@/stores/SearchSlice";
+import { nanoid } from "nanoid";
 
 // form schema 验证
 const FormSchema = z.object({
+  source: z.string(),
   searchText: z
     .string({
       required_error: "请输入内容",
@@ -57,6 +58,26 @@ const HomeSearch = ({ searchHttp }) => {
     setSearchButtonLoading(false);
   };
 
+  const [sources, setSources] = useState(undefined);
+
+  useEffect(() => {
+    const getSources = async () => {
+      const url = `${searchHttp}/plugin/sources`;
+      return await fetch(url)
+        .then((response) => response.json())
+        .then((data) => {
+          setSources(data.data.names);
+        })
+        .catch((error) => {
+          setSearchButtonLoadinEnd();
+          console.error("Error fetching data:", error);
+          errorMessageToast("数据加载失败");
+        });
+    };
+
+    getSources();
+  }, []);
+
   // 提交表单，搜索指定内容
   const onSubmit = debounce(async (data) => {
     setSearchButtonToLoading();
@@ -65,11 +86,12 @@ const HomeSearch = ({ searchHttp }) => {
     // onSubmitMessageToast(data);
 
     // 获取搜索结果
-    const resultData = await getSearchData(data.searchText);
+    const resultData = await getSearchData(data.source, data.searchText);
 
     // 放入reduxf
     if (resultData.code === 200) {
       dispatch(setStoreSearchData(resultData.data));
+      dispatch(setSearchSource(data.source));
     } else {
       errorMessageToast({ message: resultData.message });
     }
@@ -79,9 +101,10 @@ const HomeSearch = ({ searchHttp }) => {
   }, 300);
 
   // 获取检索结果 API
-  const getSearchData = async (text) => {
+  const getSearchData = async (source, text) => {
     const params = new URLSearchParams();
     params.append("name", text);
+    params.append("source", source);
 
     const queryString = params.toString();
     const url = `${searchHttp}/crawler/query?${queryString}`;
@@ -124,64 +147,72 @@ const HomeSearch = ({ searchHttp }) => {
   };
 
   return (
-    <Form {...form} className="flex flex-shrink-0">
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex items-center py-9 w-10/12 "
-      >
-        {/* 目标源设置 */}
-        <FormField
-          control={form.control}
-          name="source"
-          defaultValue="ibiqu.org"
-          render={({ field }) => (
-            <FormItem className="sm:w-4/12 w-4/12 truncate">
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="目标源" />
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  <SelectItem value="all">全部（查询时间长）</SelectItem>
-                  <SelectItem value="ibiqu.org">ibiqu.org</SelectItem>
-                </SelectContent>
-              </Select>
-              <FormMessage className="absolute" />
-            </FormItem>
-          )}
-        />
-
-        {/* 搜索内容 */}
-        <FormField
-          control={form.control}
-          name="searchText"
-          defaultValue=""
-          render={({ field }) => (
-            <FormItem className="sm:w-full w-7/12">
-              <FormControl>
-                <Input placeholder="输入作者或者书名" {...field} />
-              </FormControl>
-              <FormMessage className="absolute" />
-            </FormItem>
-          )}
-        />
-
-        {/* 提交按钮 */}
-        <Button
-          disabled={searchButtonLoading}
-          type="submit"
-          className="sm:w-3/12 w-2/12	"
+    sources && (
+      <Form {...form} className="flex flex-shrink-0">
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="flex items-center py-9 w-10/12 "
         >
-          {searchButtonLoading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Search className="sm:mr-2 sm:h-4 sm:w-4" />
-          )}
-          <div className="hidden sm:flex">查询</div>
-        </Button>
-      </form>
-    </Form>
+          {/* 目标源设置 */}
+          <FormField
+            control={form.control}
+            name="source"
+            defaultValue={sources[0]}
+            render={({ field }) => (
+              <FormItem className="sm:w-4/12 w-4/12 truncate">
+                <Select
+                  onValueChange={field.onChange}
+                  defaultValue={field.value}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="目标源" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    {sources.map((source) => (
+                      <SelectItem key={nanoid()} value={source}>
+                        {source}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage className="absolute" />
+              </FormItem>
+            )}
+          />
+
+          {/* 搜索内容 */}
+          <FormField
+            control={form.control}
+            name="searchText"
+            defaultValue=""
+            render={({ field }) => (
+              <FormItem className="sm:w-full w-7/12">
+                <FormControl>
+                  <Input placeholder="输入作者或者书名" {...field} />
+                </FormControl>
+                <FormMessage className="absolute" />
+              </FormItem>
+            )}
+          />
+
+          {/* 提交按钮 */}
+          <Button
+            disabled={searchButtonLoading}
+            type="submit"
+            className="sm:w-3/12 w-2/12	"
+          >
+            {searchButtonLoading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Search className="sm:mr-2 sm:h-4 sm:w-4" />
+            )}
+            <div className="hidden sm:flex">查询</div>
+          </Button>
+        </form>
+      </Form>
+    )
   );
 };
 

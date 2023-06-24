@@ -10,6 +10,10 @@ springdoc:
   default-flat-param-object: false
   api-docs:
     enabled: false # 是否开启接口文档
+
+crawler:
+  plugin-dir: /opt/novel_crawler/plugin
+
 #  swagger-ui:
 #    # 持久化认证数据，如果设置为 true，它会保留授权数据并且不会在浏览器关闭/刷新时丢失
 #    persistAuthorization: true

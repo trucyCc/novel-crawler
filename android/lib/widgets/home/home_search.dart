@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:android/model/search.dart';
 import 'package:android/provider/search_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -15,23 +16,87 @@ class HomeSearchWidget extends ConsumerStatefulWidget {
 }
 
 class _HomeSearchWidgetState extends ConsumerState<HomeSearchWidget> {
-  static const List<String> sourceList = <String>[
-    'all',
-    'ibiqu.org',
-  ];
-
-  // 搜索源
-  String sourceOption = "ibiqu.org";
+  static List<String> sourceList = [];
+  String sourceOption = "";
   String searchText = "";
+
+  @override
+  void didChangeDependencies() async {
+    super.didChangeDependencies();
+
+    // 初始化目标源
+    final sourceJson = await getSourceOptional();
+    print(sourceJson);
+    final sourceNames = sourceJson['data']['names'];
+    print(sourceNames);
+    final tempList =
+        sourceNames.map((dynamic item) => item.toString()).toList();
+
+    sourceList = [];
+    for (var value in tempList) {
+      sourceList.add(value.toString());
+    }
+
+    if (sourceList.isNotEmpty) {
+      sourceOption = sourceList[0];
+    }
+  }
 
   // 获取查询数据
   void searchClick() async {
-    final responseFuture = await getSearchApi();
+    final searchJson = await getSearchApi();
+
+    // 存入Provider
+    print(ref.read(searchProvider.notifier).getSearchResult());
+
+    final searchResult = SearchModel(
+      source: sourceOption,
+      resultData: searchJson['data'],
+    );
+    ref.read(searchProvider.notifier).updateSearchResult(searchResult);
+  }
+
+  dynamic getSourceOptional() async {
+    var url = Uri.http(dotenv.env['SERVER_HTTP']!, '/plugin/sources');
+
+    var response = await http.get(url, headers: {
+      HttpHeaders.contentTypeHeader: 'application/x-www-form-urlencoded',
+      HttpHeaders.acceptCharsetHeader: 'gzip'
+    });
+
+    // 请求失败
+    if (response.statusCode != 200) {
+      showErrorSnackBar('请求错误，状态：${response.statusCode}');
+      return null;
+    }
+
+    // 解析数据
+    final jsonData = json.decode(utf8.decode(response.bodyBytes));
+
+    // 服务器错误
+    if (jsonData['code'] != 200) {
+      showErrorSnackBar('${jsonData['message']}');
+      return null;
+    }
+
+    return jsonData;
+  }
+
+  dynamic getSearchApi() async {
+    final queryParameters = {"name": searchText, "source": sourceOption};
+
+    var url =
+        Uri.http(dotenv.env['SERVER_HTTP']!, '/crawler/query', queryParameters);
+
+    var responseFuture = await http.get(url, headers: {
+      HttpHeaders.contentTypeHeader: 'application/x-www-form-urlencoded',
+      HttpHeaders.acceptCharsetHeader: 'gzip'
+    });
 
     // 请求失败
     if (responseFuture.statusCode != 200) {
       showErrorSnackBar('请求错误，状态：${responseFuture.statusCode}');
-      return;
+      return null;
     }
 
     // 解析数据
@@ -40,25 +105,10 @@ class _HomeSearchWidgetState extends ConsumerState<HomeSearchWidget> {
     // 服务器错误
     if (jsonData['code'] != 200) {
       showErrorSnackBar('${jsonData['message']}');
-      return;
+      return null;
     }
 
-    // 存入Provider
-    ref.read(searchProvider.notifier).updateSearchResult(jsonData['data']);
-  }
-
-  Future<http.Response> getSearchApi() async {
-    final queryParameters = {"name": searchText};
-
-    var url =
-        Uri.http(dotenv.env['SERVER_HTTP']!, '/crawler/query', queryParameters);
-
-    print(url);
-
-    return await http.get(url, headers: {
-      HttpHeaders.contentTypeHeader: 'application/x-www-form-urlencoded',
-      HttpHeaders.acceptCharsetHeader: 'gzip'
-    });
+    return jsonData;
   }
 
   // 底部弹出报错信息

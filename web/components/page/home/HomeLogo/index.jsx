@@ -8,7 +8,7 @@ const HomeLogo = () => {
 
   return (
     !(searchDataStore.resultData.length > 0) && (
-      <div className="absolute top-20 ">
+      <div className="hidden sm:flex ">
         <Image
           src="/assets/images/home_logo_image.png"
           alt="Trucy Logo"

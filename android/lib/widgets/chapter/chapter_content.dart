@@ -8,6 +8,8 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
+import '../../provider/search_provider.dart';
+
 enum Direction {
   next,
   prev,
@@ -26,7 +28,8 @@ class ChapterContent extends ConsumerStatefulWidget {
     this.textStyle = const TextStyle(
       color: Colors.black,
       fontSize: 30,
-    ), required this.chapterId,
+    ),
+    required this.chapterId,
   }) : super(key: key);
 
   @override
@@ -84,7 +87,8 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     }
 
     // 发送请求获取书籍详细信息
-    final responseFuture = await getChapterContent(url);
+    final source = ref.read(searchProvider.notifier).getSearchResult().source;
+    final responseFuture = await getChapterContent(source, url);
 
     // 请求失败
     if (responseFuture.statusCode != 200) {
@@ -196,8 +200,8 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
   }
 
   // 获取章节页面内容
-  Future<http.Response> getChapterContent(chapterUrl) async {
-    final queryParameters = {"url": chapterUrl};
+  Future<http.Response> getChapterContent(source, chapterUrl) async {
+    final queryParameters = {"url": chapterUrl, "source": source};
     var url = Uri.http(dotenv.env['SERVER_HTTP']!, '/crawler/chapter');
 
     return await http.post(
@@ -229,7 +233,10 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
   void showWarningSnackBar(String message) {
     final snackBar = SnackBar(
       duration: const Duration(milliseconds: 600),
-      content: Text(message, style: const TextStyle(color: Colors.white),),
+      content: Text(
+        message,
+        style: const TextStyle(color: Colors.white),
+      ),
       backgroundColor: Colors.black,
       action: SnackBarAction(
         label: 'X',
@@ -301,8 +308,9 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
 
     // 获取当前书籍在 provider cache 中的位置
     final chaptersCache = ref.watch(chapterProvider) as List<dynamic>;
-    int chapterIndex =  chaptersCache.indexWhere((ch) => ch['id'] == widget.chapterId);
-    if(chapterIndex == -1) {
+    int chapterIndex =
+        chaptersCache.indexWhere((ch) => ch['id'] == widget.chapterId);
+    if (chapterIndex == -1) {
       showErrorSnackBar("章节错误，请重新搜索书籍");
       setState(() {
         showLoading = false;
@@ -310,7 +318,7 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
       return null;
     }
 
-    if((chapterIndex - currentPrevPageIndex) < 0) {
+    if ((chapterIndex - currentPrevPageIndex) < 0) {
       showWarningSnackBar("没有上一章节了");
       setState(() {
         showLoading = false;
@@ -321,11 +329,10 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     // 上一章的位置是
     int prevChapterIndex = chapterIndex - currentPrevPageIndex;
     currentPrevPageIndex = currentPrevPageIndex + 1;
-    Map<String,dynamic> chapterCache = chaptersCache[prevChapterIndex];
+    Map<String, dynamic> chapterCache = chaptersCache[prevChapterIndex];
 
     return await loadData(chapterCache['url'], Direction.prev);
   }
-
 
   Future<List<String>?> loadingNextPage() async {
     setState(() {
@@ -334,8 +341,9 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
 
     // 获取当前书籍在 provider cache 中的位置
     final chaptersCache = ref.watch(chapterProvider) as List<dynamic>;
-    int chapterIndex =  chaptersCache.indexWhere((ch) => ch['id'] == widget.chapterId);
-    if(chapterIndex == -1) {
+    int chapterIndex =
+        chaptersCache.indexWhere((ch) => ch['id'] == widget.chapterId);
+    if (chapterIndex == -1) {
       showErrorSnackBar("章节错误，请重新搜索书籍");
       setState(() {
         showLoading = false;
@@ -343,7 +351,7 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
       return null;
     }
 
-    if((chapterIndex + currentNextPageIndex) >= chaptersCache.length) {
+    if ((chapterIndex + currentNextPageIndex) >= chaptersCache.length) {
       showWarningSnackBar("这已经是最后章了");
       setState(() {
         showLoading = false;
@@ -354,12 +362,10 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     // 下一章的位置是
     int nextChapterIndex = chapterIndex + currentNextPageIndex;
     currentNextPageIndex = currentNextPageIndex + 1;
-    Map<String,dynamic> chapterCache = chaptersCache[nextChapterIndex];
+    Map<String, dynamic> chapterCache = chaptersCache[nextChapterIndex];
 
     return await loadData(chapterCache['url'], Direction.next);
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -377,7 +383,11 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
                 children: [
                   Column(
                     children: [
-                      Container(height: 30, color: Colors.black, child: Text(chapterName),),
+                      Container(
+                        height: 30,
+                        color: Colors.black,
+                        child: Text(chapterName),
+                      ),
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.all(20.0),

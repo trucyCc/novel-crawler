@@ -1,3 +1,4 @@
+import 'package:android/model/search.dart';
 import 'package:android/provider/search_provider.dart';
 import 'package:android/widgets/home/home_search.dart';
 import 'package:android/widgets/home/home_search_item.dart';
@@ -15,7 +16,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final searchResult = ref.watch(searchProvider) as List<dynamic>;
+    final searchModel = ref.watch(searchProvider) as SearchModel;
+    final searchResult = searchModel.resultData;
     final searchBool = searchResult.isNotEmpty;
 
     return SafeArea(
