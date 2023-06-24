@@ -1,3 +1,5 @@
+package com.trucy.novel.crawler.plugin;
+
 import cn.hutool.core.collection.CollectionUtil;
 import cn.hutool.core.util.StrUtil;
 import com.trucy.novel.crawler.base.CrawlerParse;
@@ -17,24 +19,24 @@ import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
-public class Crawler1ParsePlugin implements CrawlerParse {
+public class IbiquParsePlugin implements CrawlerParse {
     private static final String pluginName = "ibiquCrawlerPlugin";
     public static String url = "http://www.ibiqu.org";
     public static String queryUrl = "http://www.ibiqu.org/modules/article/search.php?searchkey={}";
 
     public static void main(String[] args) {
-        Crawler1ParsePlugin crawler1ParsePlugin = new Crawler1ParsePlugin();
-//        ArrayList<CrawlerSearchDto> crawlerSearchList = crawler1ParsePlugin.query("斗罗大陆");
-//        crawlerSearchList.forEach(c -> {
-//            log.info("{}", c);
-//        });
+        IbiquParsePlugin crawler1ParsePlugin = new IbiquParsePlugin();
+        ArrayList<CrawlerSearchDto> crawlerSearchList = crawler1ParsePlugin.query("斗罗大陆");
+        crawlerSearchList.forEach(c -> {
+            log.info("{}", c);
+        });
 
-//       val data =  crawler1ParsePlugin.crawlerBook("http://www.ibiqu.org/130_130510/");
-//       log.info("{}", data);
+        val data =  crawler1ParsePlugin.crawlerBook("http://www.ibiqu.org/130_130510/");
+        log.info("{}", data);
 
 
-//        val cdata = crawler1ParsePlugin.crawlerChapter("http://www.ibiqu.org/130_130510/170682488.html");
-//        log.info("{}", cdata);
+        val cdata = crawler1ParsePlugin.crawlerChapter("http://www.ibiqu.org/130_130510/170682488.html");
+        log.info("{}", cdata);
     }
 
     @Override
@@ -138,6 +140,22 @@ public class Crawler1ParsePlugin implements CrawlerParse {
         }
 
         return searchList;
+    }
+
+    @Override
+    public void validPlugin() {
+        IbiquParsePlugin crawler1ParsePlugin = new IbiquParsePlugin();
+        ArrayList<CrawlerSearchDto> crawlerSearchList = crawler1ParsePlugin.query("斗罗大陆");
+        crawlerSearchList.forEach(c -> {
+            log.info("{}", c);
+        });
+
+        val data =  crawler1ParsePlugin.crawlerBook("http://www.ibiqu.org/130_130510/");
+        log.info("{}", data);
+
+
+        val cdata = crawler1ParsePlugin.crawlerChapter("http://www.ibiqu.org/130_130510/170682488.html");
+        log.info("{}", cdata);
     }
 
     @Override
@@ -339,8 +357,8 @@ public class Crawler1ParsePlugin implements CrawlerParse {
     }
 
     @Override
-    public String getBookNameValidPlugin() {
-        return null;
+    public String getPluginName() {
+        return "ibiqu";
     }
 
     private OkHttpClient getConnectClient() {

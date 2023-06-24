@@ -19,17 +19,17 @@ public class CrawlerController {
     private final CrawlerService crawlerService;
 
     @GetMapping("/query")
-    public ArrayList<CrawlerSearchDto> query(@RequestParam("name") String name) {
-        return crawlerService.search(name);
+    public ArrayList<CrawlerSearchDto> query(@RequestParam("source") String source, @RequestParam("name") String name) {
+        return crawlerService.search(source, name);
     }
 
     @PostMapping("/book")
-    public Object book(@RequestParam("url") String url) {
-        return crawlerService.getBookInfo(url);
+    public Object book(@RequestParam("source") String source, @RequestParam("url") String url) {
+        return crawlerService.getBookInfo(source, url);
     }
 
     @PostMapping("/chapter")
-    public Object chapter(@RequestParam("url") String url) {
-        return crawlerService.getChapter(url);
+    public Object chapter(@RequestParam("source") String source, @RequestParam("url") String url) {
+        return crawlerService.getChapter(source, url);
     }
 }

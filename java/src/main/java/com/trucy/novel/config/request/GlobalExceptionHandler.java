@@ -2,6 +2,8 @@ package com.trucy.novel.config.request;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import com.trucy.novel.config.request.ex.BusinessException;
+import com.trucy.novel.crawler.exception.CrawlerException;
+import com.trucy.novel.crawler.exception.CrawlerPluginException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.BindException;
@@ -35,6 +37,22 @@ public class GlobalExceptionHandler {
     public ApiResponse handleBusinessException(BusinessException ex) {
         log.error("BusinessException: {}", ex.getErrorMessage(), ex);
         return ApiResponse.builder().code(ex.getErrorCode()).message(ex.getErrorMessage()).build();
+    }
+
+    @ResponseBody
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(CrawlerException.class)
+    public ApiResponse handleCrawlerException(CrawlerException ex) {
+        log.error("CrawlerException: {}", ex.getMessage(), ex);
+        return ApiResponse.builder().code(500).message(ex.getErrorMessage()).build();
+    }
+
+    @ResponseBody
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ExceptionHandler(CrawlerPluginException.class)
+    public ApiResponse handleCrawlerPluginException(CrawlerPluginException ex) {
+        log.error("CrawlerPluginException: {}", ex.getMessage(), ex);
+        return ApiResponse.builder().code(500).message(ex.getErrorMessage()).build();
     }
 
 

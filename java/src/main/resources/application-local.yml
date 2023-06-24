@@ -10,6 +10,15 @@ springdoc:
   default-flat-param-object: true
   api-docs:
     enabled: true # 是否开启接口文档
+
+crawler:
+  plugin-dir: D:\Work\trucy\project\novel-crawler\crawler_plugin_res
+
+
+
+
+
+
 #  swagger-ui:
 #    # 持久化认证数据，如果设置为 true，它会保留授权数据并且不会在浏览器关闭/刷新时丢失
 #    persistAuthorization: true

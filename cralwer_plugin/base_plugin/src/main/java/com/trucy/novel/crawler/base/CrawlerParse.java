@@ -21,11 +21,11 @@ public interface CrawlerParse {
     ArrayList<CrawlerSearchDto> query(String name);
 
     /**
-     * 获取可以验证插件的书籍名称
+     * 获取验证插件
      *
      * @return 验证插件状态
      */
-    String getBookNameValidPlugin();
+    void validPlugin();
 
     /**
      * 根据Url爬取相对应的书籍
@@ -42,4 +42,13 @@ public interface CrawlerParse {
      * @return 章节信息
      */
     CrawlerChapterDto crawlerChapter(String url);
+
+
+    /**
+     * 获取Plugin名称，用于查询时匹配目标源
+     * 不可以重复，不可以为空
+     *
+     * @return 插件名
+     */
+    String getPluginName();
 }

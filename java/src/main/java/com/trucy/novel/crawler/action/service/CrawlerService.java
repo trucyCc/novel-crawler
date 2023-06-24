@@ -1,9 +1,10 @@
 package com.trucy.novel.crawler.action.service;
 
+import com.trucy.novel.crawler.action.nanotation.ValidCrawlerPluginName;
 import com.trucy.novel.crawler.dto.CrawlerBookDto;
 import com.trucy.novel.crawler.dto.CrawlerChapterDto;
 import com.trucy.novel.crawler.dto.CrawlerSearchDto;
-import com.trucy.novel.crawler.plugin.Crawler1ParsePlugin;
+import com.trucy.novel.crawler.plugin.context.CrawlerPluginContext;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -14,18 +15,24 @@ import java.util.ArrayList;
 @Service
 @AllArgsConstructor
 public class CrawlerService {
-    private final Crawler1ParsePlugin crawler1ParsePlugin;
+    private CrawlerPluginContext crawlerPluginContext;
 
-    public ArrayList<CrawlerSearchDto> search(String name) {
-        return crawler1ParsePlugin.query(name);
+    @ValidCrawlerPluginName
+    public ArrayList<CrawlerSearchDto> search(String source, String name) {
+        crawlerPluginContext.instanceInstance(source);
+        return crawlerPluginContext.executeQuery(name);
     }
 
-    public CrawlerBookDto getBookInfo(String url) {
-        return crawler1ParsePlugin.crawlerBook(url);
+    @ValidCrawlerPluginName
+    public CrawlerBookDto getBookInfo(String source, String url) {
+        crawlerPluginContext.instanceInstance(source);
+        return crawlerPluginContext.executeCrawlerBook(url);
     }
 
-    public CrawlerChapterDto getChapter(String url) {
-        return crawler1ParsePlugin.crawlerChapter(url);
+    @ValidCrawlerPluginName
+    public CrawlerChapterDto getChapter(String source, String url) {
+        crawlerPluginContext.instanceInstance(source);
+        return crawlerPluginContext.executeCrawlerChapter(url);
     }
 
 

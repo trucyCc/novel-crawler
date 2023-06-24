@@ -1,12 +1,10 @@
 package com.trucy.novel.config.request;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @Builder
+@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 public class ApiResponse {

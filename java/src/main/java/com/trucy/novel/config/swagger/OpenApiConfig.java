@@ -51,7 +51,17 @@ public class OpenApiConfig {
                 // 组名
                 .group("Crawler")
                 // 扫描的包
-                .packagesToScan("com.trucy.novel.crawler.crawler.action.controller")
+                .packagesToScan("com.trucy.novel.crawler.action.controller")
+                .build();
+    }
+
+    @Bean
+    public GroupedOpenApi pluginApi() {
+        return GroupedOpenApi.builder()
+                // 组名
+                .group("Plugin")
+                // 扫描的包
+                .packagesToScan("com.trucy.novel.crawler.plugin.action.controller")
                 .build();
     }
 }
