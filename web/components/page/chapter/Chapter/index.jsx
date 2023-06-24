@@ -9,17 +9,22 @@ import ChapterFooter from "../ChapterFooter/ChapterFooter";
 
 const ChapterLayout = ({ chapterId, serverHttp }) => {
   // store
+  const searchDataStore = useSelector((state) => state.searchData);
   const chaptersStore = useSelector((state) => state.chapters);
 
   // router
   const router = useRouter();
 
-  const [chapterTitle, setChapterTitle] = useState("")
-  const [chapterContent, setChapterContent] = useState("")
+  const [chapterTitle, setChapterTitle] = useState("");
+  const [chapterContent, setChapterContent] = useState("");
 
   useEffect(() => {
     const fetchData = async () => {
-      if (!(chaptersStore.chapters.length > 0)) {
+      if (
+        !(chaptersStore.chapters.length > 0) ||
+        searchDataStore.source === undefined ||
+        searchDataStore.source === ""
+      ) {
         router.push(`/`);
         return;
       }
@@ -37,26 +42,29 @@ const ChapterLayout = ({ chapterId, serverHttp }) => {
         return;
       }
 
-      const result = await getChapterContent(chapterInfo.url);
-      console.log(result);
+      const result = await getChapterContent(
+        searchDataStore.source,
+        chapterInfo.url
+      );
 
-      if(result.code !== 200) {
+      if (result.code !== 200) {
         router.push(`/`);
         return;
       }
 
       const resultData = result.data;
 
-      setChapterTitle(resultData.name)
-      setChapterContent(resultData.htmlContent)
+      setChapterTitle(resultData.name);
+      setChapterContent(resultData.htmlContent);
     };
 
     fetchData();
   }, []);
 
-  const getChapterContent = async (chapterUrl) => {
+  const getChapterContent = async (source, chapterUrl) => {
     const params = new URLSearchParams();
     params.append("url", chapterUrl);
+    params.append("source", source);
 
     const queryString = params.toString();
     const url = `${serverHttp}/crawler/chapter`;
@@ -79,21 +87,11 @@ const ChapterLayout = ({ chapterId, serverHttp }) => {
 
   return (
     <div className="flex items-center flex-col">
-      <ChapterTitle 
-        title={chapterTitle}
-      />
-      {chapterContent && <ChapterOperating 
-        chapterId={chapterId}
-      />}
-      <ChapterContent 
-        content={chapterContent}
-      />
-      {chapterContent && <ChapterOperating 
-        chapterId={chapterId}
-      />}
-      <ChapterFooter
-        chapterId={chapterId}
-      />
+      <ChapterTitle title={chapterTitle} />
+      {chapterContent && <ChapterOperating chapterId={chapterId} />}
+      <ChapterContent content={chapterContent} />
+      {chapterContent && <ChapterOperating chapterId={chapterId} />}
+      <ChapterFooter chapterId={chapterId} />
     </div>
   );
 };
