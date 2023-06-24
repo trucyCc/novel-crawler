@@ -1,11 +1,18 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class SearchNotifier extends StateNotifier<List< dynamic>> {
-  SearchNotifier() : super([]);
+import '../model/search.dart';
 
-  void updateSearchResult(List<dynamic> newResult) {
-    state = newResult;
+class SearchNotifier extends StateNotifier<SearchModel> {
+  SearchNotifier(super.state);
+
+  void updateSearchResult(SearchModel searchModel) {
+    state = searchModel;
+  }
+  
+  SearchModel getSearchResult() {
+    return state;
   }
 }
 
-final searchProvider = StateNotifierProvider((ref) => SearchNotifier());
+final searchProvider = StateNotifierProvider(
+    (ref) => SearchNotifier(SearchModel(source: '', resultData: [])));

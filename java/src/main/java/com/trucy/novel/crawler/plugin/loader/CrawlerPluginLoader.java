@@ -1,8 +1,8 @@
 package com.trucy.novel.crawler.plugin.loader;
 
 import cn.hutool.core.util.StrUtil;
-import com.trucy.novel.crawler.exception.CrawlerPluginException;
 import com.trucy.novel.crawler.base.CrawlerParse;
+import com.trucy.novel.crawler.exception.CrawlerPluginException;
 import com.trucy.novel.crawler.plugin.config.CrawlerPluginConfig;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,9 @@ public class CrawlerPluginLoader {
     /**
      * 加载目录内的插件
      */
-    public void loadPlugin() throws CrawlerPluginException {
+    public synchronized void loadPlugin() throws CrawlerPluginException {
+        ConcurrentHashMap<String, CrawlerParse> tempPluginMap = new ConcurrentHashMap<>();
+
         // 加载插件目录
         val pluginDir = new File(crawlerPluginConfig.getPluginDir());
 
@@ -68,10 +70,10 @@ public class CrawlerPluginLoader {
                             .collect(Collectors.toList()));
             throw new CrawlerPluginException(
                     StrUtil.format("插件Url为空！插件目录：{}, 文件名：{}",
-                    pluginDir,
-                    Arrays.stream(pluginFiles)
-                            .map(File::getName)
-                            .collect(Collectors.toList())));
+                            pluginDir,
+                            Arrays.stream(pluginFiles)
+                                    .map(File::getName)
+                                    .collect(Collectors.toList())));
         }
 
         // 创建一个URLClassLoader，用于加载插件
@@ -99,13 +101,13 @@ public class CrawlerPluginLoader {
 
                     // 插件名为空或者插件名已经存在
                     if (StringUtils.isBlank(crawlerParse.getPluginName()) ||
-                            pluginMap.containsKey(crawlerParse.getPluginName())) {
+                            tempPluginMap.containsKey(crawlerParse.getPluginName())) {
                         log.error("插件名已存在！请修改插件名后重新加载！");
                         continue;
                     }
 
                     // 压入内存当中
-                    pluginMap.put(crawlerParse.getPluginName(), crawlerParse);
+                    tempPluginMap.put(crawlerParse.getPluginName(), crawlerParse);
                 }
 
                 // 关闭类加载器
@@ -123,6 +125,10 @@ public class CrawlerPluginLoader {
                 log.error("插件加载失败，实例化失败！pluginClassName:{}", pluginClassName, e);
             }
         }
+
+        pluginMap.clear();;
+        pluginMap.putAll(tempPluginMap);
+        tempPluginMap.clear();
     }
 
     private static String getPluginClassName(File pluginFile, ClassLoader classLoader) {
@@ -138,7 +144,7 @@ public class CrawlerPluginLoader {
                     // 格式化类名
                     className = className.substring(0, className.length() - ".class".length());
                     try {
-                        log.info("类名:{}" , className);
+                        log.info("类名:{}", className);
 
                         // 加载类
                         Class<?> cls = classLoader.loadClass(className);

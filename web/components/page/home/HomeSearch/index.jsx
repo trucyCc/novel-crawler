@@ -71,7 +71,7 @@ const HomeSearch = ({ searchHttp }) => {
         .catch((error) => {
           setSearchButtonLoadinEnd();
           console.error("Error fetching data:", error);
-          errorMessageToast(error);
+          errorMessageToast("数据加载失败");
         });
     };
 
