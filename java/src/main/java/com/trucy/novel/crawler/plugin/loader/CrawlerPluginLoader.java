@@ -96,8 +96,17 @@ public class CrawlerPluginLoader {
                 constructor.setAccessible(true);
                 Object pluginInstance = constructor.newInstance();
 
-                // 创建pluginInstance
-                CrawlerParse crawlerParse = (CrawlerParse) pluginInstance;
+                // 获取 CrawlerParse 类对象
+                Class<?> crawlerParseClass = Class.forName("com.trucy.novel.crawler.base.CrawlerParse", true, classLoader);
+
+                // 创建crawlerParse
+                CrawlerParse crawlerParse = null;
+                try {
+                    crawlerParse = (CrawlerParse) crawlerParseClass.cast(pluginInstance);
+                } catch (Exception e) {
+                    log.error("类型转换失败！PluginClassName:{}", pluginClass.getName());
+                    continue;
+                }
 
                 // 插件名为空或者插件名已经存在
                 if (StringUtils.isBlank(crawlerParse.getPluginName()) ||
