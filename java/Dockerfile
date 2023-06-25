@@ -18,9 +18,6 @@ RUN sed -i 's/<mirrors>/<mirrors>\n<mirror>\n<id>aliyun<\/id>\n<name>Aliyun Mave
 
 COPY . /app
 
-# 复制本地 Maven 仓库到容器中
-ADD /home/maven/repository /root/.m2/repository
-
 RUN mvn install -DskipTests
 
 # 启动命令
