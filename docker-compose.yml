@@ -21,4 +21,3 @@ services:
     volumes:
       - /home/maven/repository:/root/.m2/repository
       - ./crawler_plugin_res:/opt/novel_crawler/plugin
-      - ./crawler_plugin_res/base:/root/.m2/repository/com/trucy/novel/crawler/plugin/base_plugin
