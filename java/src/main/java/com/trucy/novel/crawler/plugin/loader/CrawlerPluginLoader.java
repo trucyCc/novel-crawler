@@ -105,13 +105,6 @@ public class CrawlerPluginLoader {
                 // 压入内存当中
                 tempPluginMap.put(pluginInstance.getPluginName(), pluginInstance);
 
-                // 关闭类加载器
-                try {
-                    classLoader.close();
-                } catch (IOException e) {
-                    throw new CrawlerPluginException("加载插件异常！类加载器无法关闭！", e);
-                }
-
             } catch (ClassNotFoundException e) {
                 log.error("插件加载失败，没有找到类！pluginClassName:{}", pluginClassName, e);
             } catch (NoSuchMethodException e) {
