@@ -16,8 +16,6 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Objects;
@@ -77,7 +75,7 @@ public class CrawlerPluginLoader {
         }
 
         // 创建一个URLClassLoader，用于加载插件
-        val classLoader = new URLClassLoader(pluginUrls.toArray(new URL[0]));
+        val classLoader = CrawlerParse.class.getClassLoader();
 
         // 加载插件到内存当中
         for (File pluginFile : pluginFiles) {
@@ -90,6 +88,7 @@ public class CrawlerPluginLoader {
             try {
                 // 加载类
                 Class<?> pluginClass = classLoader.loadClass(pluginClassName);
+
 
                 // 创建实例
                 Constructor<?> constructor = pluginClass.getDeclaredConstructor();
