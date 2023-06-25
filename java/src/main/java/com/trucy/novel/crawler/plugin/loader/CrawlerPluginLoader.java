@@ -20,6 +20,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.jar.JarEntry;
@@ -42,42 +43,34 @@ public class CrawlerPluginLoader {
         ConcurrentHashMap<String, CrawlerParse> tempPluginMap = new ConcurrentHashMap<>();
 
         // 加载插件目录
-        val pluginDir = new File(crawlerPluginConfig.getPluginDir());
+        val pluginDirStr = crawlerPluginConfig.getPluginDir();
+        val pluginDir = new File(pluginDirStr);
 
         // 获取插件目录下所有的.jar文件
         val pluginFiles = pluginDir.listFiles((dir, name) -> name.endsWith(".jar"));
 
-        if (pluginFiles == null || pluginFiles.length == 0) {
-            log.error("插件目录为空！插件目录：{}", pluginDir);
-            throw new CrawlerPluginException(StrUtil.format("插件目录为空！插件目录：{}", pluginDir));
+        if (pluginFiles == null) {
+            log.info("当前插件目录为空！插件目录:{}", crawlerPluginConfig.getPluginDir());
+            return;
         }
 
-        // 将插件文件的URL添加到数组当中
-        val pluginUrls = Arrays.stream(pluginFiles).map(file -> {
-            val fileUri = file.toURI();
-            try {
-                return fileUri.toURL();
-            } catch (MalformedURLException e) {
-                log.error("插件Uri转Url失败！fileUri:{}", fileUri, e);
-                return null;
-            }
-        }).filter(Objects::nonNull).collect(Collectors.toList());
+        val pluginUrls = getFileUrls(pluginFiles, pluginDirStr);
 
         if (CollectionUtils.isEmpty(pluginUrls)) {
-            log.error("插件Url为空！插件目录：{}, 文件名：{}", pluginDir,
+            log.error("插件Url为空！插件目录：{}, 文件名：{}", pluginDirStr,
                     Arrays.stream(pluginFiles)
                             .map(File::getName)
                             .collect(Collectors.toList()));
             throw new CrawlerPluginException(
                     StrUtil.format("插件Url为空！插件目录：{}, 文件名：{}",
-                            pluginDir,
+                            pluginDirStr,
                             Arrays.stream(pluginFiles)
                                     .map(File::getName)
                                     .collect(Collectors.toList())));
         }
 
         // 创建一个URLClassLoader，用于加载插件
-        val classLoader =  new URLClassLoader(pluginUrls.toArray(new URL[0]), CrawlerParse.class.getClassLoader());;
+        val classLoader = new URLClassLoader(pluginUrls.toArray(new URL[0]), CrawlerParse.class.getClassLoader());
 
         // 加载插件到内存当中
         for (File pluginFile : pluginFiles) {
@@ -91,10 +84,15 @@ public class CrawlerPluginLoader {
                 // 加载类
                 Class<?> pluginClass = classLoader.loadClass(pluginClassName);
 
-
                 // 创建实例
                 Constructor<?> constructor = pluginClass.getDeclaredConstructor();
                 constructor.setAccessible(true);
+
+                if (!(constructor.newInstance() instanceof CrawlerParse)) {
+                    log.error("插件加载失败！插件没有继承CrawlerParse！插件类名:{}", pluginClass.getName());
+                    continue;
+                }
+
                 CrawlerParse pluginInstance = (CrawlerParse) constructor.newInstance();
 
                 // 插件名为空或者插件名已经存在
@@ -106,7 +104,6 @@ public class CrawlerPluginLoader {
 
                 // 压入内存当中
                 tempPluginMap.put(pluginInstance.getPluginName(), pluginInstance);
-
             } catch (ClassNotFoundException e) {
                 log.error("插件加载失败，没有找到类！pluginClassName:{}", pluginClassName, e);
             } catch (NoSuchMethodException e) {
@@ -117,12 +114,41 @@ public class CrawlerPluginLoader {
         }
 
         pluginMap.clear();
-        ;
         pluginMap.putAll(tempPluginMap);
         tempPluginMap.clear();
     }
 
-    private static String getPluginClassName(File pluginFile, ClassLoader classLoader) {
+    /**
+     * 指定目录下的文件并转换成URL
+     *
+     * @return 插件URL列表
+     */
+    private List<URL> getFileUrls(File[] pluginFiles, String pluginDirStr) {
+        if (pluginFiles == null || pluginFiles.length == 0) {
+            log.error("插件目录为空！插件目录：{}", pluginDirStr);
+            throw new CrawlerPluginException(StrUtil.format("插件目录为空！插件目录：{}", pluginDirStr));
+        }
+
+        // 将插件文件的URL添加到数组当中
+        return Arrays.stream(pluginFiles).map(file -> {
+            val fileUri = file.toURI();
+            try {
+                return fileUri.toURL();
+            } catch (MalformedURLException e) {
+                log.error("插件Uri转Url失败！fileUri:{}", fileUri, e);
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+    }
+
+    /**
+     * 获取插件的类路径
+     *
+     * @param pluginFile  插件文件
+     * @param classLoader 类加载器
+     * @return 插件类路径
+     */
+    private String getPluginClassName(File pluginFile, ClassLoader classLoader) {
         // 读取jar文件
         try (JarFile jarFile = new JarFile(pluginFile)) {
             Enumeration<JarEntry> entries = jarFile.entries();
@@ -157,6 +183,12 @@ public class CrawlerPluginLoader {
         return null;
     }
 
+    /**
+     * 校验目标源对应的解析插件是否存在
+     *
+     * @param name 目标源名称
+     * @return 目标源是否有对应的插件
+     */
     public static Boolean checkPluginByName(String name) {
         return pluginMap.containsKey(name);
     }
