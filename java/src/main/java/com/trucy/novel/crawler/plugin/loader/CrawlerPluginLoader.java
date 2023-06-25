@@ -94,29 +94,17 @@ public class CrawlerPluginLoader {
                 // 创建实例
                 Constructor<?> constructor = pluginClass.getDeclaredConstructor();
                 constructor.setAccessible(true);
-                Object pluginInstance = constructor.newInstance();
-
-                // 获取 CrawlerParse 类对象
-                Class<?> crawlerParseClass = Class.forName("com.trucy.novel.crawler.base.CrawlerParse", true, classLoader);
-
-                // 创建crawlerParse
-                CrawlerParse crawlerParse = null;
-                try {
-                    crawlerParse = (CrawlerParse) crawlerParseClass.cast(pluginInstance);
-                } catch (Exception e) {
-                    log.error("类型转换失败！PluginClassName:{}", pluginClass.getName(), e);
-                    continue;
-                }
+                CrawlerParse pluginInstance = (CrawlerParse) constructor.newInstance();
 
                 // 插件名为空或者插件名已经存在
-                if (StringUtils.isBlank(crawlerParse.getPluginName()) ||
-                        tempPluginMap.containsKey(crawlerParse.getPluginName())) {
+                if (StringUtils.isBlank(pluginInstance.getPluginName()) ||
+                        tempPluginMap.containsKey(pluginInstance.getPluginName())) {
                     log.error("插件名已存在！请修改插件名后重新加载！");
                     continue;
                 }
 
                 // 压入内存当中
-                tempPluginMap.put(crawlerParse.getPluginName(), crawlerParse);
+                tempPluginMap.put(pluginInstance.getPluginName(), pluginInstance);
 
                 // 关闭类加载器
                 try {
