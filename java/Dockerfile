@@ -13,9 +13,11 @@ RUN command -v mvn >/dev/null 2>&1 || { \
     apt-get update && apt-get install -y maven; \
 }
 
-# 构建项目
-#RUN apt-get update && apt-get install -y maven
+# 修改maven源
 RUN sed -i 's/<mirrors>/<mirrors>\n<mirror>\n<id>aliyun<\/id>\n<name>Aliyun Maven<\/name>\n<url>https:\/\/maven.aliyun.com\/repository\/central<\/url>\n<mirrorOf>central<\/mirrorOf>\n<\/mirror>/g' /usr/share/maven/conf/settings.xml
+
+# 修改maven仓库位置
+RUN sed -i 's|<localRepository>.*</localRepository>|<localRepository>/root/.m2/repository</localRepository>|g' /usr/share/maven/conf/settings.xml
 
 COPY . /app
 
