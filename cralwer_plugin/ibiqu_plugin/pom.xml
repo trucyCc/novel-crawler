@@ -16,7 +16,6 @@
         <maven.compiler.target>11</maven.compiler.target>
     </properties>
 
-
     <dependencies>
         <dependency>
             <groupId>com.trucy.novel.crawler.plugin</groupId>
@@ -24,7 +23,6 @@
             <version>1.0-SNAPSHOT</version>
         </dependency>
     </dependencies>
-
 
     <build>
         <plugins>
@@ -52,6 +50,8 @@
                                     <mainClass>com.trucy.novel.crawler.plugin.IbiquParsePlugin</mainClass>
                                 </transformer>
                             </transformers>
+                            <minimizeJar>true</minimizeJar>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
                         </configuration>
                     </execution>
                 </executions>
