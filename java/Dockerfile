@@ -16,9 +16,6 @@ RUN command -v mvn >/dev/null 2>&1 || { \
 # 修改maven源
 RUN sed -i 's/<mirrors>/<mirrors>\n<mirror>\n<id>aliyun<\/id>\n<name>Aliyun Maven<\/name>\n<url>https:\/\/maven.aliyun.com\/repository\/central<\/url>\n<mirrorOf>central<\/mirrorOf>\n<\/mirror>/g' /usr/share/maven/conf/settings.xml
 
-# 修改maven仓库位置
-RUN sed -i 's|<!--\s*<localRepository>.*</localRepository>\s*-->|<localRepository>/home/maven/repository</localRepository>|' /usr/share/maven/conf/settings.xml
-
 COPY . /app
 
 RUN mvn install -DskipTests
