@@ -104,7 +104,7 @@ public class CrawlerPluginLoader {
                 try {
                     crawlerParse = (CrawlerParse) crawlerParseClass.cast(pluginInstance);
                 } catch (Exception e) {
-                    log.error("类型转换失败！PluginClassName:{}", pluginClass.getName());
+                    log.error("类型转换失败！PluginClassName:{}", pluginClass.getName(), e);
                     continue;
                 }
 
