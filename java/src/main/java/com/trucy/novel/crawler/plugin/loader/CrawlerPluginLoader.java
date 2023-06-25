@@ -149,9 +149,8 @@ public class CrawlerPluginLoader {
                         // 加载类
                         Class<?> cls = classLoader.loadClass(className);
 
-
                         // 判断是否是CrawlerParse的实现类
-                        if (CrawlerParse.class.isAssignableFrom(cls)) {
+                        if (cls.getName().endsWith("ParsePlugin")) {
                             return className;
                         }
 
