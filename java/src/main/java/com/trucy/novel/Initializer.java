@@ -17,7 +17,7 @@ public class Initializer {
 
     @PostConstruct
     public void init() {
-        crawlerPluginLoader.loadPlugin();
+//        crawlerPluginLoader.loadPlugin();
 
         val pluginCount = CrawlerPluginLoader.pluginMap.size();
         val sourceName = CrawlerPluginLoader.pluginMap.keySet().toArray(new String[0]);
