@@ -96,19 +96,18 @@ public class CrawlerPluginLoader {
                 constructor.setAccessible(true);
                 Object pluginInstance = constructor.newInstance();
 
-                if (pluginInstance instanceof CrawlerParse) {
-                    CrawlerParse crawlerParse = (CrawlerParse) pluginInstance;
+                // 创建pluginInstance
+                CrawlerParse crawlerParse = (CrawlerParse) pluginInstance;
 
-                    // 插件名为空或者插件名已经存在
-                    if (StringUtils.isBlank(crawlerParse.getPluginName()) ||
-                            tempPluginMap.containsKey(crawlerParse.getPluginName())) {
-                        log.error("插件名已存在！请修改插件名后重新加载！");
-                        continue;
-                    }
-
-                    // 压入内存当中
-                    tempPluginMap.put(crawlerParse.getPluginName(), crawlerParse);
+                // 插件名为空或者插件名已经存在
+                if (StringUtils.isBlank(crawlerParse.getPluginName()) ||
+                        tempPluginMap.containsKey(crawlerParse.getPluginName())) {
+                    log.error("插件名已存在！请修改插件名后重新加载！");
+                    continue;
                 }
+
+                // 压入内存当中
+                tempPluginMap.put(crawlerParse.getPluginName(), crawlerParse);
 
                 // 关闭类加载器
                 try {
@@ -126,7 +125,8 @@ public class CrawlerPluginLoader {
             }
         }
 
-        pluginMap.clear();;
+        pluginMap.clear();
+        ;
         pluginMap.putAll(tempPluginMap);
         tempPluginMap.clear();
     }
@@ -151,6 +151,7 @@ public class CrawlerPluginLoader {
 
                         // 判断是否是CrawlerParse的实现类
                         if (cls.getName().endsWith("ParsePlugin")) {
+                            log.info("获取到插件:{}", className);
                             return className;
                         }
 
