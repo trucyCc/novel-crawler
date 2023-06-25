@@ -19,6 +19,8 @@ RUN sed -i 's/<mirrors>/<mirrors>\n<mirror>\n<id>aliyun<\/id>\n<name>Aliyun Mave
 COPY . /app
 
 RUN mvn install -DskipTests
+RUN mvn help:evaluate -Dexpression=settings.localRepository
+
 
 # 启动命令
 CMD ["java", "-jar", "/app/target/novel_crawler-1.0.0-SNAPSHOT.jar", "--spring.profiles.active=prod"]
