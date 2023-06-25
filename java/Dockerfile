@@ -16,6 +16,9 @@ RUN command -v mvn >/dev/null 2>&1 || { \
 # 修改maven源
 RUN sed -i 's/<mirrors>/<mirrors>\n<mirror>\n<id>aliyun<\/id>\n<name>Aliyun Maven<\/name>\n<url>https:\/\/maven.aliyun.com\/repository\/central<\/url>\n<mirrorOf>central<\/mirrorOf>\n<\/mirror>/g' /usr/share/maven/conf/settings.xml
 
+# 仅当 pom.xml 发生变化时才执行 Maven 的 install 步骤
+RUN mvn dependency:go-offline -B
+
 COPY . /app
 
 RUN mvn install -DskipTests
