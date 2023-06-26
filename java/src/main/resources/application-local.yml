@@ -5,6 +5,14 @@ spring:
   jackson:
     date-format: yyyy-MM-dd HH:mm:ss
     default-property-inclusion: non_null
+  datasource:
+    url: jdbc:mysql://localhost:14873/crawler_novel
+    username: root
+    password: hjx1661231018
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: update
 
 springdoc:
   default-flat-param-object: true
