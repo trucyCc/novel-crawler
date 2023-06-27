@@ -1,38 +1,47 @@
 class BookShelfItem {
-  final int? id;
-  final String bookSource;
-  final String lastChapterUrl;
-  final String lastChapterName;
-  final String bookCoverUrl;
-  final String createdAt;
+  final String coverUrl;
+  final String bookName;
+  final String readLastChapterUrl;
+  final String readLastChapterName;
+  final String bookLastChapterName;
+  final String source;
+  final String chapterId;
+  final String bookId;
 
   BookShelfItem({
-    this.id,
-    required this.bookSource,
-    required this.lastChapterUrl,
-    required this.lastChapterName,
-    required this.bookCoverUrl,
-    required this.createdAt,
+    required this.coverUrl,
+    required this.bookName,
+    required this.readLastChapterUrl,
+    required this.readLastChapterName,
+    required this.source,
+    required this.chapterId,
+    required this.bookId,
+    required this.bookLastChapterName,
   });
 
   Map<String, dynamic> toMap() {
     return {
-      'book_source': bookSource,
-      'last_chapter_url': lastChapterUrl,
-      'last_chapter_name': lastChapterName,
-      'book_cover_url': bookCoverUrl,
-      'created_at': createdAt,
+      'coverUrl': coverUrl,
+      'bookName': bookName,
+      'readLastChapterUrl': readLastChapterUrl,
+      'readLastChapterName': readLastChapterName,
+      'source': source,
+      'chapterId': chapterId,
+      'bookId': bookId,
+      'bookLastChapterName': bookLastChapterName,
     };
   }
 
-  factory BookShelfItem.fromMap(Map<String, dynamic> map) {
+  static BookShelfItem fromMap(Map<String, dynamic> map) {
     return BookShelfItem(
-      id: map['id'],
-      bookSource: map['book_source'],
-      lastChapterUrl: map['last_chapter_url'],
-      lastChapterName: map['last_chapter_name'],
-      bookCoverUrl: map['book_cover_url'],
-      createdAt: map['created_at'],
+      coverUrl: map['coverUrl'],
+      bookName: map['bookName'],
+      readLastChapterUrl: map['readLastChapterUrl'],
+      readLastChapterName: map['readLastChapterName'],
+      source: map['source'],
+      chapterId: map['chapterId'],
+      bookId: map['bookId'],
+      bookLastChapterName: map['bookLastChapterName'],
     );
   }
 }

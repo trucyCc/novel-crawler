@@ -1,14 +1,13 @@
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:android/api/novel_api.dart';
 import 'package:android/provider/chapter_provider.dart';
 import 'package:android/provider/search_provider.dart';
+import 'package:android/utils/show_bar.dart';
 import 'package:android/widgets/novel/novel_body.dart';
 import 'package:android/widgets/novel/novel_head.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
 
 class NovelScreen extends ConsumerStatefulWidget {
   const NovelScreen({Key? key}) : super(key: key);
@@ -35,20 +34,9 @@ class _NovelScreenState extends ConsumerState<NovelScreen> {
 
     // 发送请求获取书籍详细信息
     final source = ref.read(searchProvider.notifier).getSearchResult().source;
-    final responseFuture = await getNovelInfoApi(source, routeParams['url']);
-
-    // 请求失败
-    if (responseFuture.statusCode != 200) {
-      showErrorSnackBar('请求错误，状态：${responseFuture.statusCode}');
-      return;
-    }
-
-    // 解析数据
-    final jsonData = json.decode(utf8.decode(responseFuture.bodyBytes));
-
-    // 服务器错误
-    if (jsonData['code'] != 200) {
-      showErrorSnackBar('${jsonData['message']}');
+    final jsonData = await NovelApi.getNovelInfoApi(
+        context, source, routeParams['url'], ShowBar.showErrorSnackBar);
+    if(jsonData == null) {
       return;
     }
 
@@ -61,37 +49,6 @@ class _NovelScreenState extends ConsumerState<NovelScreen> {
       novelInfo = jsonData['data'];
       pageLoading = false;
     });
-  }
-
-  // 获取书籍详细信息
-  Future<http.Response> getNovelInfoApi(source, novelUrl) async {
-    final queryParameters = {"url": novelUrl, "source": source};
-    var url = Uri.http(dotenv.env['SERVER_HTTP']!, '/crawler/book');
-
-    return await http.post(
-      url,
-      headers: {
-        HttpHeaders.contentTypeHeader: 'application/x-www-form-urlencoded',
-        HttpHeaders.acceptCharsetHeader: 'gzip'
-      },
-      body: Uri(queryParameters: queryParameters).query,
-    );
-  }
-
-  // 底部弹出报错信息
-  void showErrorSnackBar(String message) {
-    final snackBar = SnackBar(
-      content: Text(message),
-      backgroundColor: Colors.red,
-      action: SnackBarAction(
-        label: 'X',
-        onPressed: () {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        },
-      ),
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
   }
 
   @override
