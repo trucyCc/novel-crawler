@@ -10,4 +10,9 @@ class ChapterPositionItem {
   int startIndex;
   int endIndex;
   int length;
+
+  @override
+  String toString() {
+    return 'chapterName:$chapterName, startIndex:$startIndex, endIndex:$endIndex, length:$length';
+  }
 }

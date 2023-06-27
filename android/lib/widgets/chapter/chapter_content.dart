@@ -45,14 +45,22 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
   int currentPrevPageIndex = 1; // 上一页
   int currentNextPageIndex = 1; // 下一页
 
-  String chapterName = "第一章 圣经永流传_诡道修仙游戏";
+  String chapterName = "";
+  late ChapterPositionItem currentChapterPosition;
   List<ChapterPositionItem> chapterPositionList = [];
+  int chapterCurrentCriticalStart = 0; // 章节当前临界开始
+  int chapterCurrentCriticalEnd = 0; // 章节当前临界结束
+
+  int cacheCurrentPageIndex = 0;
+
+  int currentChapterPageLength = 1;
+  int currentChapterPageOverAllLength = 0;
 
   @override
   void initState() {
     super.initState();
 
-    _pageController = PageController(initialPage: currentPageIndex);
+    _pageController = PageController(initialPage: cacheCurrentPageIndex);
   }
 
   @override
@@ -99,6 +107,7 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
       ShowBar.showErrorSnackBar(context, '${jsonData['message']}');
       return [];
     }
+
     String chapterContent = jsonData['data']['htmlContent'].toString();
 
     chapterContent =
@@ -114,16 +123,79 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
       setState(() {
         pages.addAll(tempPage);
       });
+
+      chapterPositionList.add(
+        ChapterPositionItem(
+          chapterName: jsonData['data']['name'],
+          startIndex: pages.length - tempPage.length,
+          endIndex: pages.length - 1,
+          length: tempPage.length,
+        ),
+      );
+
+      if (chapterName.isEmpty) {
+        setState(() {
+          chapterName = jsonData['data']['name'];
+          currentChapterPageOverAllLength = tempPage.length;
+          currentChapterPageLength = 1;
+        });
+        currentChapterPosition = ChapterPositionItem(
+          chapterName: jsonData['data']['name'],
+          startIndex: pages.length - tempPage.length,
+          endIndex: pages.length - 1,
+          length: tempPage.length,
+        );
+      }
+
+      bolLoadingNextPage = true;
     }
 
     // 如果是上一页，追加到前面
     if (direction == Direction.prev) {
+      cacheCurrentPageIndex = currentPageIndex;
       setState(() {
         pages.insertAll(0, tempPage);
         currentPageIndex = tempPageSize;
       });
 
-      _pageController.jumpToPage((currentPageIndex - 1));
+      chapterPositionList.insert(
+        0,
+        ChapterPositionItem(
+          chapterName: jsonData['data']['name'],
+          startIndex: 0,
+          endIndex: tempPage.length - 1,
+          length: tempPage.length,
+        ),
+      );
+      for (int i = 1; i < chapterPositionList.length; i++) {
+        final chapterPosition = chapterPositionList[i];
+        chapterPosition.startIndex =
+            tempPage.length + chapterPosition.startIndex;
+        chapterPosition.endIndex = tempPage.length + chapterPosition.endIndex;
+        chapterPositionList[i] = chapterPosition;
+      }
+
+      if (cacheCurrentPageIndex == 0) {
+        currentChapterPosition = ChapterPositionItem(
+          chapterName: jsonData['data']['name'],
+          startIndex: 0,
+          endIndex: tempPage.length - 1,
+          length: tempPage.length,
+        );
+
+        setState(() {
+          chapterName = jsonData['data']['name'];
+          currentChapterPageOverAllLength = tempPage.length;
+          currentChapterPageLength = tempPage.length;
+        });
+      } else {
+        currentChapterPosition = chapterPositionList.firstWhere((el) =>
+            el.chapterName == currentChapterPosition.chapterName &&
+            el.length == currentChapterPosition.length);
+      }
+
+      _pageController.jumpToPage(tempPageSize + cacheCurrentPageIndex - 1);
+      bolLoadingPrefPage = true;
     }
 
     setState(() {
@@ -194,34 +266,16 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     return tempPages;
   }
 
-  void showWarningSnackBar(String message) {
-    final snackBar = SnackBar(
-      duration: const Duration(milliseconds: 600),
-      content: Text(
-        message,
-        style: const TextStyle(color: Colors.white),
-      ),
-      backgroundColor: Colors.black,
-      action: SnackBarAction(
-        label: 'X',
-        onPressed: () {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        },
-      ),
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
   // 创建Content页面
   Widget buildPage(String page) {
-    return Container(
-      child: Text(
-        page,
-        style: TextStyle(fontSize: widget.textStyle.fontSize),
-      ),
+    return Text(
+      page,
+      style: TextStyle(fontSize: widget.textStyle.fontSize),
     );
   }
+
+  bool bolLoadingPrefPage = true;
+  bool bolLoadingNextPage = true;
 
   // 页面点击事件
   void pageTopDown(TapDownDetails details) async {
@@ -232,30 +286,99 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     // 点击左侧，翻到上一页
     if (tapX < centerLine - 70) {
       if (currentPageIndex >= 0) {
-        // 当前页等于最小页面
-        if ((currentPageIndex - 4) <= 0) {
+        if ((currentPageIndex - 1) <= 0 && bolLoadingPrefPage) {
+          bolLoadingPrefPage = false;
+          setState(() {
+            showLoading = true;
+          });
           await loadingPrePage();
-        } else {
-          _pageController.previousPage(
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          );
+          setState(() {
+            showLoading = false;
+          });
+          return;
+        }
+
+        // 当前页等于最小页面
+        if ((currentPageIndex - 4) <= 0 && bolLoadingPrefPage) {
+          bolLoadingPrefPage = false;
+          loadingPrePage();
+        }
+
+        _pageController.previousPage(
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+
+        setState(() {
+          currentChapterPageLength -= 1;
+        });
+
+        if (currentPageIndex <= currentChapterPosition.startIndex) {
+          final lastChapterPositionIndex = chapterPositionList.indexWhere(
+                  (el) =>
+                      currentChapterPosition.chapterName == el.chapterName &&
+                      currentChapterPosition.startIndex == el.startIndex) -
+              1;
+          if (lastChapterPositionIndex >= 0) {
+            final lastChapterPosition =
+                chapterPositionList[lastChapterPositionIndex];
+            setState(() {
+              chapterName = lastChapterPosition.chapterName;
+              currentChapterPosition = lastChapterPosition;
+              currentChapterPageOverAllLength = currentChapterPosition.length;
+              currentChapterPageLength = currentChapterPosition.length;
+            });
+          }
         }
       }
     }
 
     // 点击右侧，翻到下一页
     if (tapX > centerLine + 70) {
-      if (currentPageIndex <= pages.length - 4) {
-        // 当前页等于最大页面
-        if (currentPageIndex <= pages.length - 4) {
+      if (currentPageIndex <= pages.length - 1) {
+        if (currentPageIndex <= pages.length - 4 && bolLoadingNextPage) {
+          bolLoadingNextPage = false;
+          loadingNextPage();
+        }
+
+        if (currentPageIndex == pages.length - 1 && bolLoadingNextPage) {
+          bolLoadingNextPage = false;
+          setState(() {
+            showLoading = true;
+          });
           await loadingNextPage();
+          setState(() {
+            showLoading = false;
+          });
         }
 
         _pageController.nextPage(
           duration: const Duration(milliseconds: 500),
           curve: Curves.easeInOut,
         );
+
+        setState(() {
+          currentChapterPageLength += 1;
+        });
+
+        // 判断current是否超过了当前的endIndex
+        if (currentPageIndex > currentChapterPosition.endIndex - 1) {
+          final lastChapterPositionIndex = chapterPositionList.indexWhere(
+                  (el) =>
+                      currentChapterPosition.chapterName == el.chapterName &&
+                      currentChapterPosition.startIndex == el.startIndex) +
+              1;
+          if (lastChapterPositionIndex != -1) {
+            final lastChapterPosition =
+                chapterPositionList[lastChapterPositionIndex];
+            setState(() {
+              chapterName = lastChapterPosition.chapterName;
+              currentChapterPosition = lastChapterPosition;
+              currentChapterPageOverAllLength = currentChapterPosition.length;
+              currentChapterPageLength = 1;
+            });
+          }
+        }
       }
     }
 
@@ -266,7 +389,7 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
   }
 
   Future<List<String>?> loadingPrePage() async {
-    if (currentNextPageIndex == 0) {
+    if (currentPrevPageIndex == 0) {
       setState(() {
         showLoading = true;
       });
@@ -284,11 +407,15 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
       return null;
     }
 
-    if ((chapterIndex - currentPrevPageIndex) < 0) {
-      showWarningSnackBar("没有上一章节了");
+    if ((chapterIndex - currentPrevPageIndex) < 0 && currentPageIndex == 0) {
+      ShowBar.showErrorSnackBar(context, "没有上一章节了");
       setState(() {
         showLoading = false;
       });
+      return null;
+    }
+
+    if ((chapterIndex - currentPrevPageIndex) < 0) {
       return null;
     }
 
@@ -319,11 +446,16 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
       return null;
     }
 
-    if ((chapterIndex + currentNextPageIndex) >= chaptersCache.length) {
-      showWarningSnackBar("这已经是最后章了");
+    if ((chapterIndex + currentNextPageIndex) >= chaptersCache.length &&
+        currentPageIndex == pages.length) {
+      ShowBar.showErrorSnackBar(context, "这已经 是最后章了");
       setState(() {
         showLoading = false;
       });
+      return null;
+    }
+
+    if ((chapterIndex + currentNextPageIndex) >= chaptersCache.length) {
       return null;
     }
 
@@ -379,6 +511,23 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
                       ),
                     ],
                   ),
+                  if (!showLoading)
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        height: 30,
+                        // color: Colors.blue,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: Text(
+                            '$currentChapterPageLength / $currentChapterPageOverAllLength',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 17),
+                          ),
+                        ),
+                      ),
+                    ),
                   if (showLoading)
                     const Center(
                       child: CircularProgressIndicator(),
