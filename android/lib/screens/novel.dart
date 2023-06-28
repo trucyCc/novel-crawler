@@ -1,11 +1,10 @@
-import 'dart:convert';
-
 import 'package:android/api/novel_api.dart';
 import 'package:android/provider/chapter_provider.dart';
 import 'package:android/provider/search_provider.dart';
 import 'package:android/utils/show_bar.dart';
 import 'package:android/widgets/novel/novel_body.dart';
 import 'package:android/widgets/novel/novel_head.dart';
+import 'package:android/widgets/novel/novel_operate.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -36,7 +35,7 @@ class _NovelScreenState extends ConsumerState<NovelScreen> {
     final source = ref.read(searchProvider.notifier).getSearchResult().source;
     final jsonData = await NovelApi.getNovelInfoApi(
         context, source, routeParams['url'], ShowBar.showErrorSnackBar);
-    if(jsonData == null) {
+    if (jsonData == null) {
       return;
     }
 
@@ -106,7 +105,16 @@ class _NovelScreenState extends ConsumerState<NovelScreen> {
               Navigator.pop(context); // 后退操作
             },
           ),
-          title: const Text('详情'),
+          title: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text('详情'),
+              if (!pageLoading)
+                NovelOperate(
+                  bookInfo: novelInfo,
+                ),
+            ],
+          ),
         ),
         body: bodyWidget);
   }

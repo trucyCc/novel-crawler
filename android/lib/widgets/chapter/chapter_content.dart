@@ -6,6 +6,7 @@ import 'package:android/provider/chapter_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../helper/datebase_helper.dart';
 import '../../model/chapter_position_item.dart';
 import '../../provider/search_provider.dart';
 import '../../utils/show_bar.dart';
@@ -20,6 +21,7 @@ class ChapterContent extends ConsumerStatefulWidget {
   final String chapterUrl;
   final TextStyle textStyle;
   final String chapterId;
+  final String bookName;
 
   const ChapterContent({
     Key? key,
@@ -30,6 +32,7 @@ class ChapterContent extends ConsumerStatefulWidget {
       fontSize: 30,
     ),
     required this.chapterId,
+    required this.bookName,
   }) : super(key: key);
 
   @override
@@ -56,20 +59,44 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
   int currentChapterPageLength = 1;
   int currentChapterPageOverAllLength = 0;
 
+  bool addBookShelf = false;
+
   @override
   void initState() {
     super.initState();
 
     _pageController = PageController(initialPage: cacheCurrentPageIndex);
+    initAddBookButton();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // 获取当前页面的内容，并压入pages
     loadData(widget.chapterUrl, Direction.next);
   }
+
+  void initAddBookButton() async {
+    final searchResult = ref.read(searchProvider.notifier).getSearchResult();
+    final searchBookInfo = searchResult.resultData
+        .firstWhere((el) => el['name'] == widget.bookName);
+    final book = await DatabaseHelper.searchBookByIdAndName(
+        searchBookInfo['id'], widget.bookName );
+
+    // 这本书不在书架
+    if (book == null) {
+      setState(() {
+        addBookShelf = false;
+      });
+      return;
+    }
+
+    setState(() {
+      addBookShelf = true;
+    });
+  }
+
+  void editBookShelf
 
   @override
   void dispose() {

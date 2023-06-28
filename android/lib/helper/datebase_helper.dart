@@ -9,7 +9,7 @@ class DatabaseHelper {
 
   DatabaseHelper._();
 
-  Future<Database> get database async {
+  static Future<Database> get database async {
     if (_database != null) {
       return _database!;
     }
@@ -18,7 +18,7 @@ class DatabaseHelper {
     return _database!;
   }
 
-  Future<Database> _initDatabase() async {
+  static Future<Database> _initDatabase() async {
     String databasesPath = await getDatabasesPath();
     String path = join(databasesPath, 'crawler_novel.db');
 
@@ -29,21 +29,24 @@ class DatabaseHelper {
     );
   }
 
-  Future<void> _createDatabase(Database db, int version) async {
+  static Future<void> _createDatabase(Database db, int version) async {
     await db.execute('''
     CREATE TABLE IF NOT EXISTS bookshelf (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
-      book_source TEXT,
-      last_chapter_url TEXT,
-      last_chapter_name TEXT,
-      book_cover_url TEXT,
-      created_at TEXT
+      coverUrl TEXT,
+      bookName TEXT,
+      source TEXT,
+      bookId TEXT,
+      bookLastChapterName TEXT,
+      chapterId TEXT,
+      readLastChapterName TEXT,
+      readLastChapterUrl TEXT
     )
   ''');
   }
 
-  Future<void> saveBook(BookShelfItem book) async {
-    Database db = await instance.database;
+  static Future<void> saveBook(BookShelfItem book) async {
+    Database db = await DatabaseHelper.database;
     await db.insert(
       'bookshelf',
       book.toMap(),
@@ -51,9 +54,25 @@ class DatabaseHelper {
     );
   }
 
-  Future<List<BookShelfItem>> loadBooks() async {
-    Database db = await instance.database;
+  static Future<void> delBook(bookId, bookName) async {
+    Database db = await DatabaseHelper.database;
+    await db.delete('bookshelf',
+        where: 'bookId = ? and bookName = ?', whereArgs: [bookId, bookName]);
+  }
+
+  static Future<List<BookShelfItem>> loadBooks() async {
+    Database db = await DatabaseHelper.database;
     List<Map<String, dynamic>> results = await db.query('bookshelf');
     return results.map((row) => BookShelfItem.fromMap(row)).toList();
+  }
+
+  static Future<BookShelfItem?> searchBookByIdAndName(bookId, bookName) async {
+    Database db = await DatabaseHelper.database;
+    List<Map<String, dynamic>> results = await db.query('bookshelf',
+        where: 'bookId = ? and bookName = ?', whereArgs: [bookId, bookName]);
+    if (results.isEmpty) {
+      return null;
+    }
+    return BookShelfItem.fromMap(results[0]);
   }
 }

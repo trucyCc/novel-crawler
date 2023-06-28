@@ -53,6 +53,7 @@ class _ChapterScreenState extends ConsumerState<ChapterScreen> {
         body: Stack(
           children: [
             ChapterContent(
+              bookName:routeParams['name'],
               chapterId: routeParams['id'],
               chapterUrl: routeParams['url'],
               onUpdateShowConfigBar: updateShowConfigBar,

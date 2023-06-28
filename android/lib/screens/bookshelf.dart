@@ -1,10 +1,12 @@
 import 'package:android/api/novel_api.dart';
 import 'package:android/api/search_api.dart';
+import 'package:android/helper/datebase_helper.dart';
 import 'package:android/router/chapter_router.dart';
 import 'package:android/utils/show_bar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../model/bookshelf_item.dart';
 import '../model/search.dart';
 import '../provider/chapter_provider.dart';
 import '../provider/search_provider.dart';
@@ -18,7 +20,34 @@ class BookShelfScreen extends ConsumerStatefulWidget {
 }
 
 class _BookShelfScreenState extends ConsumerState<BookShelfScreen> {
-  bool isLoading = false;
+  bool isLoading = true;
+  bool bookIsEmpty = false;
+  List<BookShelfItem> bookShelfItem = [];
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+
+    initBookShelf();
+  }
+
+  void initBookShelf() async {
+    final books = await DatabaseHelper.loadBooks();
+    if (books.isEmpty) {
+      setState(() {
+        isLoading = false;
+        bookIsEmpty = true;
+      });
+      return;
+    }
+
+    setState(() {
+      bookShelfItem.clear();
+      bookShelfItem.addAll(books);
+      isLoading = false;
+    });
+  }
 
   void clickBookShelfItem(
     String source,
@@ -26,11 +55,6 @@ class _BookShelfScreenState extends ConsumerState<BookShelfScreen> {
     String chapterId,
     String bookName,
   ) async {
-    print(source);
-    print(bookId);
-    print(chapterId);
-    print(bookName);
-
     setState(() {
       isLoading = true;
     });
@@ -84,24 +108,27 @@ class _BookShelfScreenState extends ConsumerState<BookShelfScreen> {
       ),
       body: Stack(
         children: [
-          ListView.builder(
-            itemCount: 100,
-            itemBuilder: (context, index) {
-              return BookshelfItemWidget(
-                source: "ibiqu",
-                bookId: "160_160607",
-                chapterId: "182992296",
-                coverUrl:
-                    "http://r.m.ibiqu.org/cover/aHR0cDovL2Jvb2tjb3Zlci55dWV3ZW4uY29tL3FkYmltZy8zNDk1NzMvMTAzMzczMzY0Ni8xODA=",
-                bookName: "诡道修仙游戏",
-                readLastChapterUrl:
-                    "http://www.ibiqu.org/160_160607/182992296.html",
-                readLastChapterName: "第一章 圣经永流传",
-                bookLastChapterName: "第一百四十九章 新的起点",
-                clickBookShelfItem: clickBookShelfItem,
-              );
-            },
-          ),
+          bookIsEmpty
+              ? const Center(
+                  child: Text("当前书架没有书籍，请去搜索书籍加入吧"),
+                )
+              : ListView.builder(
+                  itemCount: bookShelfItem.length,
+                  itemBuilder: (context, index) {
+                    final shelfItem = bookShelfItem[index];
+                    return BookshelfItemWidget(
+                      source: shelfItem.source,
+                      bookId: shelfItem.bookId,
+                      chapterId: shelfItem.chapterId,
+                      coverUrl: shelfItem.coverUrl,
+                      bookName: shelfItem.bookName,
+                      readLastChapterUrl: shelfItem.readLastChapterUrl,
+                      readLastChapterName: shelfItem.readLastChapterName,
+                      bookLastChapterName: shelfItem.bookLastChapterName,
+                      clickBookShelfItem: clickBookShelfItem,
+                    );
+                  },
+                ),
           if (isLoading)
             // 蒙版
             Container(
