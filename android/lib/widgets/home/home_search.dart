@@ -16,30 +16,34 @@ class HomeSearchWidget extends ConsumerStatefulWidget {
 }
 
 class _HomeSearchWidgetState extends ConsumerState<HomeSearchWidget> {
-  static List<String> sourceList = [];
-  String sourceOption = "";
+  static List<String> sourceList = ["none"];
+  String sourceOption = sourceList[0];
   String searchText = "";
 
   @override
-  void didChangeDependencies() async {
-    super.didChangeDependencies();
+  void initState() {
+    // TODO: implement initState
+    super.initState();
 
-    // 初始化目标源
-    final sourceJson = await getSourceOptional();
-    print(sourceJson);
-    final sourceNames = sourceJson['data']['names'];
-    print(sourceNames);
-    final tempList =
-        sourceNames.map((dynamic item) => item.toString()).toList();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      sourceOption = "";
+      sourceList = [];
 
-    sourceList = [];
-    for (var value in tempList) {
-      sourceList.add(value.toString());
-    }
+      // 初始化目标源
+      final sourceJson = await getSourceOptional();
+      final sourceNames = sourceJson['data']['names'];
+      final tempList =
+          sourceNames.map((dynamic item) => item.toString()).toList();
 
-    if (sourceList.isNotEmpty) {
-      sourceOption = sourceList[0];
-    }
+      setState(() {
+        for (dynamic t in tempList) {
+          sourceList.add(t.toString());
+        }
+        if (sourceList.isNotEmpty) {
+          sourceOption = sourceList[0];
+        }
+      });
+    });
   }
 
   // 获取查询数据

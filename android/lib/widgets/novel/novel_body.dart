@@ -1,3 +1,4 @@
+import 'package:android/router/chapter_router.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -11,19 +12,6 @@ class NovelBody extends ConsumerWidget {
   final List<dynamic> chapters;
   final String bookName;
 
-  // 跳转指定Novel
-  void goToChapter(BuildContext context, Map<String, dynamic> chapter) {
-    Navigator.pushNamed(
-      context,
-      '/novel/chapter',
-      arguments: {
-        "id": chapter['id'],
-        "url": chapter['url'],
-        "name": bookName,
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
@@ -34,7 +22,7 @@ class NovelBody extends ConsumerWidget {
             Map<String, dynamic> item = chapters[index];
             return TextButton(
               onPressed: () {
-                goToChapter(context, item);
+                ChapterRouter.goToChapter(context, item, bookName);
               },
               child: Text(
                 '${item['name']}',

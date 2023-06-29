@@ -1,14 +1,15 @@
 import 'dart:convert';
-import 'dart:io';
 import 'dart:ui';
 
+import 'package:android/api/chapter_api.dart';
 import 'package:android/provider/chapter_provider.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:http/http.dart' as http;
 
+import '../../helper/datebase_helper.dart';
+import '../../model/chapter_position_item.dart';
 import '../../provider/search_provider.dart';
+import '../../utils/show_bar.dart';
 
 enum Direction {
   next,
@@ -20,6 +21,7 @@ class ChapterContent extends ConsumerStatefulWidget {
   final String chapterUrl;
   final TextStyle textStyle;
   final String chapterId;
+  final String bookName;
 
   const ChapterContent({
     Key? key,
@@ -30,6 +32,7 @@ class ChapterContent extends ConsumerStatefulWidget {
       fontSize: 30,
     ),
     required this.chapterId,
+    required this.bookName,
   }) : super(key: key);
 
   @override
@@ -37,38 +40,77 @@ class ChapterContent extends ConsumerStatefulWidget {
 }
 
 class _ChapterContentState extends ConsumerState<ChapterContent> {
-  final List<String> pages = [];
-
-  // 加载状态
-  bool showLoading = true;
-
-  // 当前页数
-  int currentPageIndex = 0;
-
-  final _pageKey = GlobalKey();
-
-  // Page页面控制器
-  late PageController _pageController;
+  final List<String> pages = []; // 页面列表
+  bool showLoading = true; // 加载状态
+  int currentPageIndex = 0; // 当前页数
+  final _pageKey = GlobalKey(); // text size 计算容器
+  late PageController _pageController; // Page页面控制器
+  int currentPrevPageIndex = 1; // 上一页
+  int currentNextPageIndex = 1; // 下一页
 
   String chapterName = "";
+  String chapterUrl = "";
+  late ChapterPositionItem currentChapterPosition;
+  List<ChapterPositionItem> chapterPositionList = [];
+  int chapterCurrentCriticalStart = 0; // 章节当前临界开始
+  int chapterCurrentCriticalEnd = 0; // 章节当前临界结束
 
-  int currentPrevPageIndex = 1;
-  int currentNextPageIndex = 1;
+  int cacheCurrentPageIndex = 0;
+
+  int currentChapterPageLength = 1;
+  int currentChapterPageOverAllLength = 0;
+
+  bool addBookShelf = false;
+
+  String bookId = '';
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
 
-    _pageController = PageController(initialPage: currentPageIndex);
+    _pageController = PageController(initialPage: cacheCurrentPageIndex);
+    initBookMessage();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    // 获取当前页面的内容，并压入pages
+    // 初次加载数据
     loadData(widget.chapterUrl, Direction.next);
+  }
+
+  void initBookMessage() async {
+    final searchResult = ref.read(searchProvider.notifier).getSearchResult();
+    if (widget.bookName.isEmpty) return;
+    final searchBookInfo = searchResult.resultData
+        .firstWhere((el) => el['name'] == widget.bookName);
+    final book = await DatabaseHelper.searchBookByIdAndName(
+        searchBookInfo['id'], widget.bookName);
+
+    bookId = searchBookInfo['id'];
+
+    if (book == null) {
+      setState(() {
+        addBookShelf = false;
+      });
+      return;
+    }
+
+    setState(() {
+      addBookShelf = true;
+    });
+  }
+
+  bool initBookShelfItemMessage = false;
+
+  void editBookShelf(String chapterName, String chapterUrl) async {
+    await DatabaseHelper.updateBookShelfItemByIdAndName(
+      bookId,
+      widget.bookName,
+      chapterName.replaceAll("_", "").replaceAll(widget.bookName, ""),
+      chapterUrl,
+    );
   }
 
   @override
@@ -78,21 +120,24 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
   }
 
   Future<List<String>> loadData(String url, Direction direction) async {
-    setState(() {
-      showLoading = true;
-    });
+    if (currentPageIndex == pages.length - 4 || currentNextPageIndex == 0) {
+      setState(() {
+        showLoading = true;
+      });
+    }
     if (url.isEmpty) {
-      showErrorSnackBar('请求失败！章节URL为空！请选择其他章节！');
+      ShowBar.showErrorSnackBar(context, '请求失败！章节URL为空！请选择其他章节！');
       return [];
     }
 
     // 发送请求获取书籍详细信息
     final source = ref.read(searchProvider.notifier).getSearchResult().source;
-    final responseFuture = await getChapterContent(source, url);
+    final responseFuture = await ChapterApi.getChapterContent(source, url);
 
     // 请求失败
     if (responseFuture.statusCode != 200) {
-      showErrorSnackBar('请求错误，状态：${responseFuture.statusCode}');
+      ShowBar.showErrorSnackBar(
+          context, '请求错误，状态：${responseFuture.statusCode}');
       return [];
     }
 
@@ -101,9 +146,10 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
 
     // 服务器错误
     if (jsonData['code'] != 200) {
-      showErrorSnackBar('${jsonData['message']}');
+      ShowBar.showErrorSnackBar(context, '${jsonData['message']}');
       return [];
     }
+
     String chapterContent = jsonData['data']['htmlContent'].toString();
 
     chapterContent =
@@ -119,21 +165,96 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
       setState(() {
         pages.addAll(tempPage);
       });
+
+      chapterPositionList.add(
+        ChapterPositionItem(
+          chapterName: jsonData['data']['name'],
+          startIndex: pages.length - tempPage.length,
+          endIndex: pages.length - 1,
+          length: tempPage.length,
+          chapterUrl: jsonData['data']['url'],
+        ),
+      );
+
+      if (chapterName.isEmpty) {
+        setState(() {
+          chapterName = jsonData['data']['name'];
+          chapterUrl = jsonData['data']['url'];
+          editBookShelf(chapterName, chapterUrl);
+          currentChapterPageOverAllLength = tempPage.length;
+          currentChapterPageLength = 1;
+        });
+        currentChapterPosition = ChapterPositionItem(
+          chapterName: jsonData['data']['name'],
+          startIndex: pages.length - tempPage.length,
+          endIndex: pages.length - 1,
+          length: tempPage.length,
+          chapterUrl: jsonData['data']['url'],
+        );
+      }
+
+      bolLoadingNextPage = true;
     }
 
     // 如果是上一页，追加到前面
     if (direction == Direction.prev) {
+      cacheCurrentPageIndex = currentPageIndex;
       setState(() {
         pages.insertAll(0, tempPage);
         currentPageIndex = tempPageSize;
       });
 
-      _pageController.jumpToPage((currentPageIndex - 1));
+      chapterPositionList.insert(
+        0,
+        ChapterPositionItem(
+          chapterUrl: jsonData['data']['url'],
+          chapterName: jsonData['data']['name'],
+          startIndex: 0,
+          endIndex: tempPage.length - 1,
+          length: tempPage.length,
+        ),
+      );
+      for (int i = 1; i < chapterPositionList.length; i++) {
+        final chapterPosition = chapterPositionList[i];
+        chapterPosition.startIndex =
+            tempPage.length + chapterPosition.startIndex;
+        chapterPosition.endIndex = tempPage.length + chapterPosition.endIndex;
+        chapterPositionList[i] = chapterPosition;
+      }
+
+      if (cacheCurrentPageIndex == 0) {
+        currentChapterPosition = ChapterPositionItem(
+          chapterName: jsonData['data']['name'],
+          startIndex: 0,
+          endIndex: tempPage.length - 1,
+          length: tempPage.length,
+          chapterUrl: jsonData['data']['url'],
+        );
+
+        setState(() {
+          chapterName = jsonData['data']['name'];
+          chapterUrl = jsonData['data']['url'];
+          editBookShelf(chapterName, chapterUrl);
+          currentChapterPageOverAllLength = tempPage.length;
+          currentChapterPageLength = tempPage.length;
+        });
+      } else {
+        currentChapterPosition = chapterPositionList.firstWhere((el) =>
+            el.chapterName == currentChapterPosition.chapterName &&
+            el.length == currentChapterPosition.length);
+      }
+
+      _pageController.jumpToPage(tempPageSize + cacheCurrentPageIndex - 1);
+      bolLoadingPrefPage = true;
     }
 
     setState(() {
       showLoading = false;
     });
+
+    if (!initBookShelfItemMessage) {
+      editBookShelf(chapterName, chapterUrl);
+    }
 
     return tempPage;
   }
@@ -167,7 +288,7 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     // https://medium.com/swlh/flutter-line-metrics-fd98ab180a64
     // 每个LineMetrics表示文本的一行，可以获取行的信息
     List<LineMetrics> lines = textPainter.computeLineMetrics();
-    double currentPageBottom = pageSize.height;
+    double currentPageBottom = pageSize.height - 30;
     int currentPageStartIndex = 0;
     int currentPageEndIndex = 0;
 
@@ -189,7 +310,7 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
         tempPages.add(pageText);
 
         currentPageStartIndex = currentPageEndIndex;
-        currentPageBottom = top + pageSize.height;
+        currentPageBottom = top + pageSize.height - 30;
       }
     }
 
@@ -199,65 +320,16 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     return tempPages;
   }
 
-  // 获取章节页面内容
-  Future<http.Response> getChapterContent(source, chapterUrl) async {
-    final queryParameters = {"url": chapterUrl, "source": source};
-    var url = Uri.http(dotenv.env['SERVER_HTTP']!, '/crawler/chapter');
-
-    return await http.post(
-      url,
-      headers: {
-        HttpHeaders.contentTypeHeader: 'application/x-www-form-urlencoded',
-        HttpHeaders.acceptCharsetHeader: 'gzip'
-      },
-      body: Uri(queryParameters: queryParameters).query,
-    );
-  }
-
-  // 底部弹出报错信息
-  void showErrorSnackBar(String message) {
-    final snackBar = SnackBar(
-      content: Text(message),
-      backgroundColor: Colors.red,
-      action: SnackBarAction(
-        label: 'X',
-        onPressed: () {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        },
-      ),
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
-  void showWarningSnackBar(String message) {
-    final snackBar = SnackBar(
-      duration: const Duration(milliseconds: 600),
-      content: Text(
-        message,
-        style: const TextStyle(color: Colors.white),
-      ),
-      backgroundColor: Colors.black,
-      action: SnackBarAction(
-        label: 'X',
-        onPressed: () {
-          ScaffoldMessenger.of(context).hideCurrentSnackBar();
-        },
-      ),
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(snackBar);
-  }
-
   // 创建Content页面
   Widget buildPage(String page) {
-    return Container(
-      child: Text(
-        page,
-        style: TextStyle(fontSize: widget.textStyle.fontSize),
-      ),
+    return Text(
+      page,
+      style: TextStyle(fontSize: widget.textStyle.fontSize),
     );
   }
+
+  bool bolLoadingPrefPage = true;
+  bool bolLoadingNextPage = true;
 
   // 页面点击事件
   void pageTopDown(TapDownDetails details) async {
@@ -268,14 +340,51 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     // 点击左侧，翻到上一页
     if (tapX < centerLine - 70) {
       if (currentPageIndex >= 0) {
-        // 当前页等于最小页面
-        if (currentPageIndex == 0) {
+        if ((currentPageIndex - 1) <= 0 && bolLoadingPrefPage) {
+          bolLoadingPrefPage = false;
+          setState(() {
+            showLoading = true;
+          });
           await loadingPrePage();
-        } else {
-          _pageController.previousPage(
-            duration: const Duration(milliseconds: 500),
-            curve: Curves.easeInOut,
-          );
+          setState(() {
+            showLoading = false;
+          });
+          return;
+        }
+
+        // 当前页等于最小页面
+        if ((currentPageIndex - 4) <= 0 && bolLoadingPrefPage) {
+          bolLoadingPrefPage = false;
+          loadingPrePage();
+        }
+
+        _pageController.previousPage(
+          duration: const Duration(milliseconds: 500),
+          curve: Curves.easeInOut,
+        );
+
+        setState(() {
+          currentChapterPageLength -= 1;
+        });
+
+        if (currentPageIndex <= currentChapterPosition.startIndex) {
+          final lastChapterPositionIndex = chapterPositionList.indexWhere(
+                  (el) =>
+                      currentChapterPosition.chapterName == el.chapterName &&
+                      currentChapterPosition.startIndex == el.startIndex) -
+              1;
+          if (lastChapterPositionIndex >= 0) {
+            final lastChapterPosition =
+                chapterPositionList[lastChapterPositionIndex];
+            setState(() {
+              chapterName = lastChapterPosition.chapterName;
+              chapterUrl = lastChapterPosition.chapterUrl;
+              editBookShelf(chapterName, chapterUrl);
+              currentChapterPosition = lastChapterPosition;
+              currentChapterPageOverAllLength = currentChapterPosition.length;
+              currentChapterPageLength = currentChapterPosition.length;
+            });
+          }
         }
       }
     }
@@ -283,15 +392,51 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     // 点击右侧，翻到下一页
     if (tapX > centerLine + 70) {
       if (currentPageIndex <= pages.length - 1) {
-        // 当前页等于最大页面
-        if (currentPageIndex == pages.length - 1) {
+        if (currentPageIndex <= pages.length - 4 && bolLoadingNextPage) {
+          bolLoadingNextPage = false;
+          loadingNextPage();
+        }
+
+        if (currentPageIndex == pages.length - 1 && bolLoadingNextPage) {
+          bolLoadingNextPage = false;
+          setState(() {
+            showLoading = true;
+          });
           await loadingNextPage();
+          setState(() {
+            showLoading = false;
+          });
         }
 
         _pageController.nextPage(
           duration: const Duration(milliseconds: 500),
           curve: Curves.easeInOut,
         );
+
+        setState(() {
+          currentChapterPageLength += 1;
+        });
+
+        // 判断current是否超过了当前的endIndex
+        if (currentPageIndex > currentChapterPosition.endIndex - 1) {
+          final lastChapterPositionIndex = chapterPositionList.indexWhere(
+                  (el) =>
+                      currentChapterPosition.chapterName == el.chapterName &&
+                      currentChapterPosition.startIndex == el.startIndex) +
+              1;
+          if (lastChapterPositionIndex != -1) {
+            final lastChapterPosition =
+                chapterPositionList[lastChapterPositionIndex];
+            setState(() {
+              chapterName = lastChapterPosition.chapterName;
+              chapterUrl = lastChapterPosition.chapterUrl;
+              editBookShelf(chapterName, chapterUrl);
+              currentChapterPosition = lastChapterPosition;
+              currentChapterPageOverAllLength = currentChapterPosition.length;
+              currentChapterPageLength = 1;
+            });
+          }
+        }
       }
     }
 
@@ -302,16 +447,26 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
   }
 
   Future<List<String>?> loadingPrePage() async {
-    setState(() {
-      showLoading = true;
-    });
+    if (currentPrevPageIndex == 0) {
+      setState(() {
+        showLoading = true;
+      });
+    }
 
     // 获取当前书籍在 provider cache 中的位置
     final chaptersCache = ref.watch(chapterProvider) as List<dynamic>;
     int chapterIndex =
         chaptersCache.indexWhere((ch) => ch['id'] == widget.chapterId);
     if (chapterIndex == -1) {
-      showErrorSnackBar("章节错误，请重新搜索书籍");
+      ShowBar.showErrorSnackBar(context, "章节错误，请重新搜索书籍");
+      setState(() {
+        showLoading = false;
+      });
+      return null;
+    }
+
+    if ((chapterIndex - currentPrevPageIndex) < 0 && currentPageIndex == 0) {
+      ShowBar.showErrorSnackBar(context, "没有上一章节了");
       setState(() {
         showLoading = false;
       });
@@ -319,10 +474,6 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     }
 
     if ((chapterIndex - currentPrevPageIndex) < 0) {
-      showWarningSnackBar("没有上一章节了");
-      setState(() {
-        showLoading = false;
-      });
       return null;
     }
 
@@ -335,16 +486,27 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
   }
 
   Future<List<String>?> loadingNextPage() async {
-    setState(() {
-      showLoading = true;
-    });
+    if (currentPageIndex == pages.length - 1) {
+      setState(() {
+        showLoading = true;
+      });
+    }
 
     // 获取当前书籍在 provider cache 中的位置
     final chaptersCache = ref.watch(chapterProvider) as List<dynamic>;
     int chapterIndex =
         chaptersCache.indexWhere((ch) => ch['id'] == widget.chapterId);
     if (chapterIndex == -1) {
-      showErrorSnackBar("章节错误，请重新搜索书籍");
+      ShowBar.showErrorSnackBar(context, "章节错误，请重新搜索书籍");
+      setState(() {
+        showLoading = false;
+      });
+      return null;
+    }
+
+    if ((chapterIndex + currentNextPageIndex) >= chaptersCache.length &&
+        currentPageIndex == pages.length) {
+      ShowBar.showErrorSnackBar(context, "这已经 是最后章了");
       setState(() {
         showLoading = false;
       });
@@ -352,10 +514,6 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     }
 
     if ((chapterIndex + currentNextPageIndex) >= chaptersCache.length) {
-      showWarningSnackBar("这已经是最后章了");
-      setState(() {
-        showLoading = false;
-      });
       return null;
     }
 
@@ -381,13 +539,18 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
               },
               child: Stack(
                 children: [
+                  SizedBox(
+                    height: 30,
+                    child: Padding(
+                      padding: const EdgeInsets.only(left: 10),
+                      child: Text(
+                        chapterName,
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
                   Column(
                     children: [
-                      Container(
-                        height: 30,
-                        color: Colors.black,
-                        child: Text(chapterName),
-                      ),
                       Expanded(
                         child: Padding(
                           padding: const EdgeInsets.all(20.0),
@@ -406,6 +569,23 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
                       ),
                     ],
                   ),
+                  if (!showLoading)
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        height: 30,
+                        // color: Colors.blue,
+                        child: Padding(
+                          padding: const EdgeInsets.only(right: 10),
+                          child: Text(
+                            '$currentChapterPageLength / $currentChapterPageOverAllLength',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(fontSize: 17),
+                          ),
+                        ),
+                      ),
+                    ),
                   if (showLoading)
                     const Center(
                       child: CircularProgressIndicator(),
