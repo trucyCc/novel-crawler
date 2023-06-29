@@ -55,10 +55,10 @@ Server中添加了插件管理器，支持多源切换，多源检索
 **内容**  
 ![image](https://github.com/trucyCc/novel-crawler/assets/126760204/1b80ff43-4706-409c-9d5d-85ee276f5b2c)
 
-**书架**
+**书架**  
 ![6c82672a1a2543227a9b434e5dc7515](https://github.com/trucyCc/novel-crawler/assets/126760204/bc108a83-624c-480f-b344-e62c9956ee77)
 
-**内容页目录**
+**内容页目录**  
 ![911bcff6a365f823f08267fc041c916](https://github.com/trucyCc/novel-crawler/assets/126760204/1e54d337-1653-47ce-b1df-fb429e2ab589)
 
 ### 待修复
