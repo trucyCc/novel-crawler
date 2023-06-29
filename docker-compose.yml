@@ -19,5 +19,5 @@ services:
       - '7873:8989'
     container_name: crawler-novel-java
     volumes:
-      - ~/.m2/repository:/root/.m2/repository
+      - /home/maven/repository:/root/.m2/repository
       - ./crawler_plugin_res:/opt/novel_crawler/plugin
