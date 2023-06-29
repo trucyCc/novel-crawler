@@ -9,7 +9,6 @@ class BookshelfItemWidget extends ConsumerWidget {
     required this.readLastChapterUrl,
     required this.readLastChapterName,
     required this.source,
-    required this.chapterId,
     required this.bookId,
     required this.bookLastChapterName,
     required this.clickBookShelfItem,
@@ -21,7 +20,6 @@ class BookshelfItemWidget extends ConsumerWidget {
   final String readLastChapterName;
   final String bookLastChapterName;
   final String source;
-  final String chapterId;
   final String bookId;
   final Function clickBookShelfItem;
 
@@ -32,7 +30,6 @@ class BookshelfItemWidget extends ConsumerWidget {
         clickBookShelfItem(
           source,
           bookId,
-          chapterId,
           bookName,
         );
       },

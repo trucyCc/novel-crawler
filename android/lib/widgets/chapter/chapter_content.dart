@@ -49,6 +49,7 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
   int currentNextPageIndex = 1; // 下一页
 
   String chapterName = "";
+  String chapterUrl = "";
   late ChapterPositionItem currentChapterPosition;
   List<ChapterPositionItem> chapterPositionList = [];
   int chapterCurrentCriticalStart = 0; // 章节当前临界开始
@@ -61,29 +62,34 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
 
   bool addBookShelf = false;
 
+  String bookId = '';
+
   @override
   void initState() {
     super.initState();
 
     _pageController = PageController(initialPage: cacheCurrentPageIndex);
-    initAddBookButton();
+    initBookMessage();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
 
+    // 初次加载数据
     loadData(widget.chapterUrl, Direction.next);
   }
 
-  void initAddBookButton() async {
+  void initBookMessage() async {
     final searchResult = ref.read(searchProvider.notifier).getSearchResult();
+    if (widget.bookName.isEmpty) return;
     final searchBookInfo = searchResult.resultData
         .firstWhere((el) => el['name'] == widget.bookName);
     final book = await DatabaseHelper.searchBookByIdAndName(
-        searchBookInfo['id'], widget.bookName );
+        searchBookInfo['id'], widget.bookName);
 
-    // 这本书不在书架
+    bookId = searchBookInfo['id'];
+
     if (book == null) {
       setState(() {
         addBookShelf = false;
@@ -96,7 +102,16 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     });
   }
 
-  void editBookShelf
+  bool initBookShelfItemMessage = false;
+
+  void editBookShelf(String chapterName, String chapterUrl) async {
+    await DatabaseHelper.updateBookShelfItemByIdAndName(
+      bookId,
+      widget.bookName,
+      chapterName.replaceAll("_", "").replaceAll(widget.bookName, ""),
+      chapterUrl,
+    );
+  }
 
   @override
   void dispose() {
@@ -157,12 +172,15 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
           startIndex: pages.length - tempPage.length,
           endIndex: pages.length - 1,
           length: tempPage.length,
+          chapterUrl: jsonData['data']['url'],
         ),
       );
 
       if (chapterName.isEmpty) {
         setState(() {
           chapterName = jsonData['data']['name'];
+          chapterUrl = jsonData['data']['url'];
+          editBookShelf(chapterName, chapterUrl);
           currentChapterPageOverAllLength = tempPage.length;
           currentChapterPageLength = 1;
         });
@@ -171,6 +189,7 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
           startIndex: pages.length - tempPage.length,
           endIndex: pages.length - 1,
           length: tempPage.length,
+          chapterUrl: jsonData['data']['url'],
         );
       }
 
@@ -188,6 +207,7 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
       chapterPositionList.insert(
         0,
         ChapterPositionItem(
+          chapterUrl: jsonData['data']['url'],
           chapterName: jsonData['data']['name'],
           startIndex: 0,
           endIndex: tempPage.length - 1,
@@ -208,10 +228,13 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
           startIndex: 0,
           endIndex: tempPage.length - 1,
           length: tempPage.length,
+          chapterUrl: jsonData['data']['url'],
         );
 
         setState(() {
           chapterName = jsonData['data']['name'];
+          chapterUrl = jsonData['data']['url'];
+          editBookShelf(chapterName, chapterUrl);
           currentChapterPageOverAllLength = tempPage.length;
           currentChapterPageLength = tempPage.length;
         });
@@ -228,6 +251,10 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
     setState(() {
       showLoading = false;
     });
+
+    if (!initBookShelfItemMessage) {
+      editBookShelf(chapterName, chapterUrl);
+    }
 
     return tempPage;
   }
@@ -351,6 +378,8 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
                 chapterPositionList[lastChapterPositionIndex];
             setState(() {
               chapterName = lastChapterPosition.chapterName;
+              chapterUrl = lastChapterPosition.chapterUrl;
+              editBookShelf(chapterName, chapterUrl);
               currentChapterPosition = lastChapterPosition;
               currentChapterPageOverAllLength = currentChapterPosition.length;
               currentChapterPageLength = currentChapterPosition.length;
@@ -400,6 +429,8 @@ class _ChapterContentState extends ConsumerState<ChapterContent> {
                 chapterPositionList[lastChapterPositionIndex];
             setState(() {
               chapterName = lastChapterPosition.chapterName;
+              chapterUrl = lastChapterPosition.chapterUrl;
+              editBookShelf(chapterName, chapterUrl);
               currentChapterPosition = lastChapterPosition;
               currentChapterPageOverAllLength = currentChapterPosition.length;
               currentChapterPageLength = 1;

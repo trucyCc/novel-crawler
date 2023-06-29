@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 class ChapterCatalogue extends ConsumerWidget {
-  const ChapterCatalogue({Key? key, required this.chapters}) : super(key: key);
+  const ChapterCatalogue(
+      {Key? key,
+      required this.chapters,
+      required this.bookName,
+      required this.refreshChapter})
+      : super(key: key);
   final List<dynamic> chapters;
+  final String bookName;
+  final Function refreshChapter;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -19,7 +26,7 @@ class ChapterCatalogue extends ConsumerWidget {
                       // 设置高度为一行的高度
                       alignment: Alignment.centerLeft,
                       padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child:const Text(
+                      child: const Text(
                         '目 录',
                         style: TextStyle(
                           color: Colors.black,
@@ -34,10 +41,11 @@ class ChapterCatalogue extends ConsumerWidget {
                           final chapter = chapters[index];
                           return InkWell(
                             onTap: () {
-                              print("点击目录 ${chapter['name']}");
+                              print("点击目录 ${chapter}");
+                              refreshChapter(chapter, bookName);
                             },
                             child: Container(
-                              decoration:const BoxDecoration(
+                              decoration: const BoxDecoration(
                                 border: Border(
                                   bottom: BorderSide(
                                     color: Colors.grey,

@@ -38,6 +38,7 @@ class _BookShelfScreenState extends ConsumerState<BookShelfScreen> {
       setState(() {
         isLoading = false;
         bookIsEmpty = true;
+        bookShelfItem = books;
       });
       return;
     }
@@ -52,7 +53,6 @@ class _BookShelfScreenState extends ConsumerState<BookShelfScreen> {
   void clickBookShelfItem(
     String source,
     String bookId,
-    String chapterId,
     String bookName,
   ) async {
     setState(() {
@@ -74,7 +74,6 @@ class _BookShelfScreenState extends ConsumerState<BookShelfScreen> {
     // 遍历查询结果获取bookUrl
     final resultBook =
         searchResult.resultData.firstWhere((data) => data['id'] == bookId);
-    print('resultBook: $resultBook');
 
     // 从源获取Book
     final bookJsonData = await NovelApi.getNovelInfoApi(
@@ -82,13 +81,18 @@ class _BookShelfScreenState extends ConsumerState<BookShelfScreen> {
     if (bookJsonData == null) {
       return;
     }
-    print('searchBookJson: $bookJsonData');
 
+    final item = bookShelfItem.firstWhere((el) => el.bookId == bookId);
     final chapters = bookJsonData['data']['chapters'] as List<dynamic>;
     ref.read(chapterProvider.notifier).updateChapters(chapters);
-    final chapter = chapters.firstWhere((ch) => ch['id'] == chapterId);
 
-    ChapterRouter.goToChapter(context, chapter, resultBook['name']);
+    try {
+      final chapter =
+          chapters.firstWhere((ch) => ch['name'] == item.readLastChapterName);
+      ChapterRouter.goToChapter(context, chapter, resultBook['name']);
+    } catch (e) {
+      ShowBar.showTopicSnackBar(context, '没有找到指定章节！');
+    }
 
     // 跳转章节页面
     setState(() {
@@ -100,10 +104,21 @@ class _BookShelfScreenState extends ConsumerState<BookShelfScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "书 架",
-          style: TextStyle(),
-          textAlign: TextAlign.center,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "书 架",
+              style: TextStyle(),
+              textAlign: TextAlign.center,
+            ),
+            IconButton(
+              onPressed: () {
+                setState(() {});
+              },
+              icon: const Icon(Icons.refresh),
+            ),
+          ],
         ),
       ),
       body: Stack(
@@ -119,7 +134,6 @@ class _BookShelfScreenState extends ConsumerState<BookShelfScreen> {
                     return BookshelfItemWidget(
                       source: shelfItem.source,
                       bookId: shelfItem.bookId,
-                      chapterId: shelfItem.chapterId,
                       coverUrl: shelfItem.coverUrl,
                       bookName: shelfItem.bookName,
                       readLastChapterUrl: shelfItem.readLastChapterUrl,

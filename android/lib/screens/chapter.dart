@@ -1,4 +1,3 @@
-import 'package:android/widgets/chapter/chapter_bottom_bar.dart';
 import 'package:android/widgets/chapter/chapter_content.dart';
 import 'package:android/widgets/chapter/chapter_top_bar.dart';
 import 'package:flutter/material.dart';
@@ -18,6 +17,14 @@ class _ChapterScreenState extends ConsumerState<ChapterScreen> {
   bool showConfigBar = false;
   Map<String, dynamic> chapterData = {};
 
+  bool initRoutParams = true;
+
+  String bookNameRouteParam = "";
+  String chapterIdRouteParam = "";
+  String chapterUrlRouteParam = "";
+
+  Key refreshChapterContentKey = GlobalKey();
+
   void updateShowConfigBar() {
     setState(() {
       showConfigBar = !showConfigBar;
@@ -32,16 +39,29 @@ class _ChapterScreenState extends ConsumerState<ChapterScreen> {
     });
   }
 
+  void refreshChapter(Map<String, dynamic> chapter, String bookName) {
+    setState(() {
+      isDrawerOpen = false;
+      bookNameRouteParam = bookName;
+      chapterIdRouteParam = chapter['id'];
+      chapterUrlRouteParam = chapter['url'];
+      refreshChapterContentKey = GlobalKey();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    // 获取路由参数
-    final routeParams =
-        ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
-
-    String? bookName = routeParams['name'];
-    bookName ??= "No Book Name";
-
     final chaptersCache = ref.watch(chapterProvider) as List<dynamic>;
+
+    if (initRoutParams) {
+      final routeParams =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>;
+
+      bookNameRouteParam = routeParams['name'];
+      chapterIdRouteParam = routeParams['id'];
+      chapterUrlRouteParam = routeParams['url'];
+      initRoutParams = false;
+    }
 
     return GestureDetector(
       onTap: () {
@@ -53,15 +73,16 @@ class _ChapterScreenState extends ConsumerState<ChapterScreen> {
         body: Stack(
           children: [
             ChapterContent(
-              bookName:routeParams['name'],
-              chapterId: routeParams['id'],
-              chapterUrl: routeParams['url'],
+              key: refreshChapterContentKey,
+              bookName: bookNameRouteParam,
+              chapterId: chapterIdRouteParam,
+              chapterUrl: chapterUrlRouteParam,
               onUpdateShowConfigBar: updateShowConfigBar,
               textStyle: const TextStyle(color: Colors.black, fontSize: 23),
             ),
             if (showConfigBar)
               ChapterTopBar(
-                bookName: bookName,
+                bookName: bookNameRouteParam,
                 chapters: chaptersCache,
                 toggleDrawer: toggleDrawer,
               ),
@@ -77,7 +98,12 @@ class _ChapterScreenState extends ConsumerState<ChapterScreen> {
                   color: Colors.black.withOpacity(0.5),
                 ),
               ),
-            if (isDrawerOpen) ChapterCatalogue(chapters: chaptersCache),
+            if (isDrawerOpen)
+              ChapterCatalogue(
+                chapters: chaptersCache,
+                bookName: bookNameRouteParam,
+                refreshChapter: refreshChapter,
+              ),
           ],
         ),
       ),

@@ -75,4 +75,18 @@ class DatabaseHelper {
     }
     return BookShelfItem.fromMap(results[0]);
   }
+
+  static Future<void> updateBookShelfItemByIdAndName(
+      bookId, bookName, chapterName, chapterUrl) async {
+    Database db = await DatabaseHelper.database;
+    await db.update(
+      'bookshelf',
+      {
+        'readLastChapterName': chapterName,
+        'readLastChapterUrl': chapterUrl,
+      },
+      where: 'bookId = ? and bookName = ?',
+      whereArgs: [bookId, bookName],
+    );
+  }
 }
