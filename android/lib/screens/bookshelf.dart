@@ -32,7 +32,7 @@ class _BookShelfScreenState extends ConsumerState<BookShelfScreen> {
     initBookShelf();
   }
 
-  void initBookShelf() async {
+  Future<void> initBookShelf() async {
     final books = await DatabaseHelper.loadBooks();
     if (books.isEmpty) {
       setState(() {
@@ -100,6 +100,15 @@ class _BookShelfScreenState extends ConsumerState<BookShelfScreen> {
     });
   }
 
+  void delBook(bookId, bookName) async {
+    setState(() {
+      isLoading = true;
+    });
+    await DatabaseHelper.delBook(bookId, bookName);
+    await initBookShelf();
+    ShowBar.showTopicSnackBar(context, '$bookName 删除成功');
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,7 +123,7 @@ class _BookShelfScreenState extends ConsumerState<BookShelfScreen> {
             ),
             IconButton(
               onPressed: () {
-                setState(() {});
+                initBookShelf();
               },
               icon: const Icon(Icons.refresh),
             ),
@@ -140,6 +149,10 @@ class _BookShelfScreenState extends ConsumerState<BookShelfScreen> {
                       readLastChapterName: shelfItem.readLastChapterName,
                       bookLastChapterName: shelfItem.bookLastChapterName,
                       clickBookShelfItem: clickBookShelfItem,
+                      loadBookshelf: () {
+                        setState(() {});
+                      },
+                      delBook: delBook,
                     );
                   },
                 ),

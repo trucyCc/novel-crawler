@@ -60,6 +60,7 @@ class DatabaseHelper {
         where: 'bookId = ? and bookName = ?', whereArgs: [bookId, bookName]);
   }
 
+
   static Future<List<BookShelfItem>> loadBooks() async {
     Database db = await DatabaseHelper.database;
     List<Map<String, dynamic>> results = await db.query('bookshelf');
